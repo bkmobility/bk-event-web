@@ -78,6 +78,22 @@ tr.sel td{background:#EAF3FE}
 .pc-f button{padding:6px 14px;border-radius:9px;background:var(--b50);color:var(--b800);font-weight:700;font-size:13px}.pc-f button.d{background:var(--red-bg);color:var(--red)}
 .pc-memo{margin-top:8px;color:var(--sub);font-size:12.5px}
 .sentinel{height:1px}
+.btn.org{background:#FFF2E3;color:#B35A00}.btn.ghost{background:#fff;border:1px solid var(--line)}
+.dbanner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 14px;background:#FFF2E3;border-bottom:1px solid #F7D3A8;color:#9A5200;font-weight:700;font-size:14px}
+.dbanner .btn{height:32px;font-size:12.5px}
+.dp{font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;background:#FFF2E3;color:#E8710A;margin-left:6px}
+tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
+.pcard.dup{box-shadow:inset 0 0 0 1.5px #F7D3A8}.pcard.gs{margin-top:18px}
+.acts button.o,.pc-f button.o{background:#FFF2E3;color:#B35A00}
+.dupebox{margin-top:10px;border-radius:12px;padding:10px 12px;font-size:13.5px;font-weight:700;background:#FDECEC;color:#C62828}
+.dupebox.o{background:#FFF2E3;color:#9A5200}.dupebox small{display:block;color:var(--sub);font-weight:500;margin-top:3px}
+.dupebox .db{display:flex;gap:8px;margin-top:8px}.dupebox .db button{flex:1;height:36px;border-radius:10px;background:#fff;font-weight:700;font-size:13px}
+.dupebox .db button.f{color:#C62828;border:1.5px solid #F5BDBD}
+.blkrow{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--sub);font-weight:600}
+.mgf{padding:9px 0;border-top:1px solid var(--line)}.mgf:first-child{border-top:0}.mgf>small{display:block;color:var(--sub);font-weight:800;font-size:12.5px}
+.mgf .same{color:#8a94a3;font-size:14px;padding:3px 0}
+.rd{display:flex;align-items:center;gap:9px;min-height:38px;font-size:15px;cursor:pointer}.rd input{width:20px;height:20px;margin:0}.rd i{color:#8a94a3;font-style:normal}
+.mgprev{margin-top:10px;background:var(--b50);border:1.5px dashed var(--b100);border-radius:12px;padding:9px 12px;font-size:14px}.mgprev small{display:block;color:var(--sub);font-weight:700;font-size:12px}
 .top .btn.red{height:36px;padding:0 15px;font-size:13.5px}
 @media(max-width:640px){
  .tw{display:none}.cards{display:block}
@@ -118,11 +134,13 @@ tr.sel td{background:#EAF3FE}
     <div class="card">
       <div class="bar">
         <input class="q" id="q" type="search" placeholder="이름 · 전화번호 · 거주지 · 소개자 검색">
+        <button class="btn org" id="dupBtn" hidden>⚠ 중복 0건 · 중복만 보기</button>
         <button class="btn pri" id="add">+ 새로 추가</button>
         <button class="btn" id="imp">엑셀 올리기</button>
         <button class="btn" id="exp">엑셀 내려받기</button>
         <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
       </div>
+      <div class="dbanner" id="dupBanner" hidden><span id="dupBannerT"></span><span class="sp"></span><button class="btn org" id="dupAuto">전체 자동 합치기</button><button class="btn ghost" id="dupOff">필터 해제</button></div>
       <div class="selbar" id="selbar">
         <label><input type="checkbox" class="c" id="selAll"> 전체 선택</label>
         <span class="cntx" id="selCnt"></span>
@@ -152,8 +170,19 @@ tr.sel td{background:#EAF3FE}
     <div class="sugw"><label class="f">거주지 (법정동 검색)<input id="fRes" maxlength="40" autocomplete="off" placeholder="동네 이름을 입력하세요 (예: 역동)"></label><div class="sug" hidden></div></div>
     <div class="sugw"><label class="f">소개자<input id="fIntro" maxlength="30" autocomplete="off"></label><div class="sug" hidden></div></div>
     <label class="f">비고<input id="fMemo" maxlength="40" autocomplete="off"></label>
+    <div class="dupebox" id="mDupe" hidden></div>
+    <label class="blkrow"><input type="checkbox" class="c" id="blockDup"> 중복이면 추가 막기 (끄면 “그래도 추가” 가능)</label>
     <p class="err" id="mErr" hidden></p>
     <div class="mf"><button class="btn dng" id="mDel" hidden>삭제</button><div class="sp"></div><button class="btn" id="mCancel">취소</button><button class="btn pri" id="mSave">저장</button></div>
+  </div>
+</div>
+<div class="modal-b" id="mgb" hidden>
+  <div class="modal">
+    <h3 id="mgT">합치기</h3>
+    <p class="hint" id="mgS"></p>
+    <div id="mgF"></div>
+    <div class="mgprev"><small>합친 결과</small><b id="mgP">-</b></div>
+    <div class="mf"><button class="btn" id="mgCancel">취소</button><button class="btn pri" id="mgGo">합치기</button></div>
   </div>
 </div>
 <div class="toast" id="toast" hidden></div>
@@ -207,19 +236,36 @@ $('#logout').onclick=function(){BKFB.signOut()};
 
 /* 목록 */
 var sel={},PAGE=80,lst=[],shownN=PAGE,narrow=window.matchMedia('(max-width:640px)');
+var LSP='bkevent.web.';
+function lsGet(k){try{return localStorage.getItem(LSP+k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(LSP+k,v)}catch(e){}}
+var blockDup=lsGet('block')==='1',dupIgnore={},dupMode=false,dupSet={},dupGroupsCache=[];
+try{dupIgnore=JSON.parse(lsGet('ign')||'{}')||{}}catch(e){dupIgnore={}}
+var DF=[['birth','생년월일'],['res','거주지'],['intro','소개자'],['memo','비고']];
+function nameKey(p){return String(p.name||'').trim()+'|'+digits(p.phone)}
+function computeDups(){
+ var m={};people.forEach(function(p){if(digits(p.phone).length<8)return;var k=nameKey(p);(m[k]=m[k]||[]).push(p)});
+ dupGroupsCache=Object.keys(m).filter(function(k){return m[k].length>1&&!dupIgnore[k]}).map(function(k){return{key:k,items:m[k]}}).sort(function(a,b){return a.items[0].name.localeCompare(b.items[0].name,'ko')});
+ dupSet={};dupGroupsCache.forEach(function(g){g.items.forEach(function(p){dupSet[p.id]=g.key})});
+}
 function filterList(){
  var toks=$('#q').value.toLowerCase().split(/\s+/).filter(Boolean);
  var l=people.filter(function(p){if(!toks.length)return true;var h=(p.name+' '+p.phone+' '+digits(p.phone)+' '+p.birth+' '+p.res+' '+p.intro+' '+p.memo).toLowerCase();return toks.every(function(t){return h.indexOf(t)>=0})});
  l.sort(function(a,b){return String(a[sortK]||'').localeCompare(String(b[sortK]||''),'ko')*sortD||a.name.localeCompare(b.name,'ko')});
+ if(dupMode){l=l.filter(function(p){return dupSet[p.id]});l.sort(function(a,b){return a.name.localeCompare(b.name,'ko')||nameKey(a).localeCompare(nameKey(b))});}
+ l.forEach(function(p,i){p.__gs=dupMode&&(i===0||nameKey(l[i-1])!==nameKey(p))});
  return l}
-function rowHtml(p){return '<tr class="r'+(sel[p.id]?' sel':'')+'" data-id="'+esc(p.id)+'"><td><input type="checkbox" class="c" data-id="'+esc(p.id)+'"'+(sel[p.id]?' checked':'')+' aria-label="선택"></td><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.phone)+'</td><td class="h">'+esc(p.birth)+'</td><td>'+esc(p.res)+'</td><td>'+esc(p.intro)+'</td><td class="h m">'+esc(p.memo)+'</td><td class="acts"><button data-a="e">수정</button><button class="d" data-a="d">삭제</button></td></tr>'}
+function rowHtml(p){return '<tr class="r'+(sel[p.id]?' sel':'')+(dupSet[p.id]?' dup':'')+(p.__gs?' gs':'')+'" data-id="'+esc(p.id)+'"><td><input type="checkbox" class="c" data-id="'+esc(p.id)+'"'+(sel[p.id]?' checked':'')+' aria-label="선택"></td><td><b>'+esc(p.name)+'</b>'+(dupSet[p.id]?'<span class="dp">중복</span>':'')+'</td><td>'+esc(p.phone)+'</td><td class="h">'+esc(p.birth)+'</td><td>'+esc(p.res)+'</td><td>'+esc(p.intro)+'</td><td class="h m">'+esc(p.memo)+'</td><td class="acts">'+(dupSet[p.id]?'<button class="o" data-a="m">합치기</button>':'')+'<button data-a="e">수정</button><button class="d" data-a="d">삭제</button></td></tr>'}
 function cardHtml(p){var tag=p.memo?'<span class="pill">'+esc(p.memo)+'</span>':'';
- return '<div class="pcard'+(sel[p.id]?' sel':'')+'" data-id="'+esc(p.id)+'"><div class="pc-h"><input type="checkbox" class="c" data-id="'+esc(p.id)+'"'+(sel[p.id]?' checked':'')+' aria-label="선택"><b>'+esc(p.name)+'</b>'+tag+'</div>'+
+ return '<div class="pcard'+(sel[p.id]?' sel':'')+(dupSet[p.id]?' dup':'')+(p.__gs?' gs':'')+'" data-id="'+esc(p.id)+'"><div class="pc-h"><input type="checkbox" class="c" data-id="'+esc(p.id)+'"'+(sel[p.id]?' checked':'')+' aria-label="선택"><b>'+esc(p.name)+'</b>'+tag+(dupSet[p.id]?'<span class="dp">중복</span>':'')+'</div>'+
  '<div class="pc-ph">☎ '+(p.phone?'<a href="tel:'+esc(digits(p.phone))+'">'+esc(p.phone)+'</a>':'-')+'</div>'+
  '<div class="tiles"><div class="tile"><small>생년월일</small><b>'+(esc(p.birth)||'-')+'</b></div><div class="tile"><small>거주지</small><b>'+(esc(p.res)||'-')+'</b></div><div class="tile"><small>소개자</small><b>'+(esc(p.intro)||'-')+'</b></div></div>'+
- '<div class="pc-f"><button data-a="e">수정</button><button class="d" data-a="d">삭제</button></div></div>'}
+ '<div class="pc-f">'+(dupSet[p.id]?'<button class="o" data-a="m">합치기</button>':'')+'<button data-a="e">수정</button><button class="d" data-a="d">삭제</button></div></div>'}
 function render(reset){
+ computeDups();
+ if(dupMode&&!dupGroupsCache.length)dupMode=false;
  lst=filterList();
+ updateDupUi();
  if(reset!==false)shownN=PAGE;
  var ok={};lst.forEach(function(p){ok[p.id]=1});Object.keys(sel).forEach(function(id){if(!ok[id])delete sel[id]});
  var q=$('#q').value.trim();
@@ -274,6 +320,7 @@ function onRow(e){
  if(e.target.closest('input.c'))return;
  var b=e.target.closest('button');
  if(b&&b.getAttribute('data-a')==='d'){del(id);return}
+ if(b&&b.getAttribute('data-a')==='m'){openMerge(dupSet[id]);return}
  if(e.target.closest('a'))return;
  openModal(id)}
 function onChk(e){var c=e.target.closest('input.c');if(!c)return;var id=c.getAttribute('data-id');if(c.checked)sel[id]=1;else delete sel[id];updateSel()}
@@ -281,17 +328,74 @@ $('#tb').onclick=onRow;$('#cards').onclick=onRow;$('#tb').onchange=onChk;$('#car
 $('#q').oninput=function(){render(true)};
 document.querySelector('thead').onclick=function(e){var th=e.target.closest('th[data-k]');if(!th)return;var k=th.getAttribute('data-k');if(sortK===k)sortD=-sortD;else{sortK=k;sortD=1}render(true)};
 
+/* 중복 확인 / 합치기 */
+function updateDupUi(){
+ var n=dupGroupsCache.length,cnt=dupGroupsCache.reduce(function(a,g){return a+g.items.length},0);
+ var b=$('#dupBtn');b.hidden=!n;b.textContent='⚠ 중복 '+n+'건 · '+(dupMode?'전체 보기':'중복만 보기');
+ $('#dupBanner').hidden=!dupMode;$('#dupBannerT').textContent='중복만 표시 중 ('+cnt+'명, '+n+'건) · 이름과 전화번호가 모두 같은 항목';
+}
+$('#dupBtn').onclick=function(){dupMode=!dupMode;render(true)};
+$('#dupOff').onclick=function(){dupMode=false;render(true)};
+function fillCount(p){return DF.filter(function(f){return p[f[0]]}).length}
+function pickBase(items){return items.slice().sort(function(a,b){return fillCount(b)-fillCount(a)||(b.ts||0)-(a.ts||0)})[0]}
+function distinct(items,f,inc){var o=[];items.forEach(function(p){var v=String(p[f]||'').trim();if((v||inc)&&o.indexOf(v)<0)o.push(v)});return o}
+function autoValues(items,base){var vals={},c=0;DF.forEach(function(d){var f=d[0],ne=distinct(items,f,false);
+ if(f==='memo')vals[f]=ne.join(', ');else{vals[f]=String(base[f]||'').trim()||ne[0]||'';if(ne.length>1)c++}});return{vals:vals,conflicts:c}}
+function mergeOps(items,base,vals,ops){var n=Object.assign({},base);delete n.__gs;DF.forEach(function(d){n[d[0]]=vals[d[0]]||''});n.ts=Date.now();ops.push({t:'set',p:n});
+ items.forEach(function(p){if(p!==base)ops.push({t:'del',id:p.id})});return items.length-1}
+var mgS={g:null,base:null};
+function mgFieldHtml(f,label,items){
+ var opts=distinct(items,f,true);
+ if(opts.length<=1){var v=opts[0]||'';return '<div class="mgf"><small>'+label+'</small><div class="same">'+(v?esc(v)+' (같음)':'(없음)')+'</div></div>'}
+ var ne=opts.filter(Boolean),def=String(mgS.base[f]||'').trim()||ne[0]||'';if(f==='memo'&&ne.length>1)def='\u0000none';
+ var h='<div class="mgf"><small>'+label+(ne.length>1?' (서로 다름)':'')+'</small>';
+ opts.forEach(function(v){h+='<label class="rd"><input type="radio" name="mg_'+f+'" value="'+esc(v)+'"'+(v===def?' checked':'')+'><span>'+(v?esc(v):'<i>(비어 둠)</i>')+'</span></label>'});
+ if(f==='memo'&&ne.length>1)h+='<label class="rd"><input type="radio" name="mg_'+f+'" value="__both" checked><span><b>둘 다 남기기</b> → “'+esc(ne.join(', '))+'”</span></label>';
+ return h+'</div>'}
+function mgValues(){var vals={},items=mgS.g.items;DF.forEach(function(d){var f=d[0],r=document.querySelector('input[name="mg_'+f+'"]:checked'),o=distinct(items,f,true);
+ if(!r)vals[f]=o[0]||'';else if(r.value==='__both')vals[f]=distinct(items,f,false).join(', ');else vals[f]=r.value});return vals}
+function mgPrev(){var v=mgValues(),p=mgS.g.items[0];$('#mgP').textContent=[p.name,p.phone,v.birth,v.res,v.intro,v.memo].filter(Boolean).join(' · ')}
+function openMerge(key){
+ var g=dupGroupsCache.filter(function(x){return x.key===key})[0];if(!g)return;
+ mgS.g=g;mgS.base=pickBase(g.items);
+ $('#mgT').textContent='합치기 · '+g.items[0].name;$('#mgS').textContent=g.items[0].phone+' · 같은 항목은 그대로, 다른 항목만 골라요';
+ $('#mgF').innerHTML=DF.map(function(d){return mgFieldHtml(d[0],d[1],g.items)}).join('');
+ $('#mgGo').textContent='합치기 (사본 '+(g.items.length-1)+'개 삭제)';mgPrev();$('#mgb').hidden=false}
+$('#mgF').onchange=mgPrev;
+$('#mgCancel').onclick=function(){$('#mgb').hidden=true};
+$('#mgGo').onclick=function(){var g=mgS.g;if(!g)return;var ops=[],n=mergeOps(g.items,mgS.base,mgValues(),ops);$('#mgb').hidden=true;
+ BKFB.batch(ops).then(function(){toast('합쳤어요 (사본 '+n+'개 삭제)')}).catch(function(e){toast(fbErr(e))})};
+$('#dupAuto').onclick=function(){
+ var gs=dupGroupsCache.slice();if(!gs.length)return;var ops=[],conf=0,rm=0;
+ gs.forEach(function(g){var base=pickBase(g.items),r=autoValues(g.items,base);conf+=r.conflicts;rm+=mergeOps(g.items,base,r.vals,ops)});
+ if(!confirm('중복 '+gs.length+'건을 자동으로 합칠까요?\n빈 칸은 사본 값으로 채우고, 비고가 다르면 둘 다 남겨요.'+(conf?'\n값이 서로 다른 항목이 '+conf+'개 있어요. 그 항목은 정보가 더 많은 쪽 값을 써요.\n(하나씩 고르려면 취소 후 각 행의 “합치기”를 누르세요)':'')+'\n앱(모든 폰)에도 바로 반영되고 되돌릴 수 없어요.'))return;
+ BKFB.batch(ops).then(function(){toast(gs.length+'건을 합쳤어요 ('+rm+'개 삭제)')}).catch(function(e){toast(fbErr(e))})};
+
 /* 추가/수정/삭제 */
 function find(id){return people.filter(function(p){return p.id===id})[0]||null}
 function openModal(id){
  editId=id||null;var p=id?find(id):null;
  $('#mt').textContent=p?'정보 수정':'새로 추가';
  $('#fName').value=p?p.name:'';$('#fPhone').value=p?p.phone:'';$('#fBirth').value=p?p.birth:'';$('#fRes').value=p?p.res:'';$('#fIntro').value=p?p.intro:'';$('#fMemo').value=p?p.memo:'';
- $('#mDel').hidden=!p;$('#mErr').hidden=true;$('#mb').hidden=false;
+ $('#mDel').hidden=!p;$('#mErr').hidden=true;$('#mb').hidden=false;$('#blockDup').checked=blockDup;forceAdd=false;checkMDupe();
  setTimeout(function(){$('#fName').focus()},50);
 }
 function closeModal(){$('#mb').hidden=true;hideSug()}
 $('#add').onclick=function(){openModal(null)};
+var forceAdd=false;
+function mExact(){var n=$('#fName').value.trim(),d=digits($('#fPhone').value);if(!n||d.length<9)return[];return people.filter(function(p){return p.id!==editId&&String(p.name).trim()===n&&digits(p.phone)===d})}
+function checkMDupe(){
+ var box=$('#mDupe'),n=$('#fName').value.trim(),d=digits($('#fPhone').value);
+ if(d.length<9){box.hidden=true;return}
+ var hit=people.filter(function(p){return p.id!==editId&&digits(p.phone)===d}),ex=hit.filter(function(p){return String(p.name).trim()===n}),ot=hit.filter(function(p){return String(p.name).trim()!==n});
+ if(ex.length){var e=ex[0];box.className='dupebox';box.innerHTML='⛔ 이미 등록된 사람이에요 (이름·번호 동일)<small>'+esc(e.name)+' · '+esc(e.phone)+(e.res?' · '+esc(e.res):'')+(e.intro?' · '+esc(e.intro):'')+'</small><div class="db"><button type="button" data-d="open">기존 항목 열기</button>'+(blockDup?'':'<button type="button" class="f" data-d="force">그래도 '+(editId?'저장':'추가')+'</button>')+'</div>';box.hidden=false}
+ else if(ot.length){box.className='dupebox o';box.innerHTML='참고: 같은 번호의 다른 이름이 있어요 - '+ot.slice(0,3).map(function(p){return esc(p.name)}).join(', ')+' (저장은 가능해요)';box.hidden=false}
+ else box.hidden=true}
+$('#fName').addEventListener('input',checkMDupe);$('#fPhone').addEventListener('input',checkMDupe);
+$('#blockDup').onchange=function(){blockDup=this.checked;lsSet('block',blockDup?'1':'0');checkMDupe()};
+$('#mDupe').onclick=function(e){var b=e.target.closest('button[data-d]');if(!b)return;
+ if(b.getAttribute('data-d')==='force'){forceAdd=true;$('#mSave').click()}
+ else{var ex=mExact()[0];if(ex){closeModal();setTimeout(function(){openModal(ex.id)},50)}}};
 $('#mCancel').onclick=closeModal;
 $('#mb').onclick=function(e){if(e.target===$('#mb'))closeModal()};
 $('#fBirth').oninput=function(){this.value=digits(this.value).slice(0,6)};
@@ -299,9 +403,11 @@ $('#fPhone').onblur=function(){this.value=fmtPhone(this.value)};
 $('#mSave').onclick=function(){
  var n=$('#fName').value.trim(),ph=fmtPhone($('#fPhone').value),b=digits($('#fBirth').value),er=$('#mErr');
  function bad(m){er.textContent=m;er.hidden=false}
- if(!n)return bad('이름을 입력해 주세요.');
+ if(!n){forceAdd=false;return bad('이름을 입력해 주세요.')}
  if(digits(ph).length<9)return bad('전화번호를 정확히 입력해 주세요.');
  if(b&&b.length!==6)return bad('생년월일은 6자리로 입력해 주세요.');
+ if(mExact().length&&!forceAdd){checkMDupe();return bad(blockDup?'이미 등록된 사람이라 추가할 수 없어요.':'이미 등록된 사람이에요. 그래도 저장하려면 “그래도 저장/추가”를 눌러 주세요.')}
+ forceAdd=false;
  var p=editId?find(editId):null;
  var rec={id:p?p.id:BKFB.newId(),name:n,phone:ph,birth:b,res:$('#fRes').value.trim(),intro:$('#fIntro').value.trim(),memo:$('#fMemo').value.trim(),ts:Date.now()};
  BKFB.setPerson(rec).then(function(){toast(p?'수정했어요':'추가했어요')}).catch(function(e){toast(fbErr(e))});
