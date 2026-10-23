@@ -113,12 +113,53 @@ tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
  .selbar{border:0;padding:10px 16px}
  .cnt{padding:8px 16px}
 }
+
+.stat{font-size:11.5px;padding:3px 9px;line-height:1.5}
+.top .btn.red{height:auto;padding:3px 9px;font-size:11.5px;font-weight:700;line-height:1.5;border-radius:99px;box-shadow:none}
+.wtabs{display:flex;gap:6px;margin-left:10px}
+.wtabs button{padding:7px 18px;border-radius:10px;font-weight:700;font-size:15px;color:#fff;opacity:.9}
+.wtabs button.on{background:#fff;color:#E53935;opacity:1}
+.bnav{display:none}
+.sv{padding:16px}
+.sk4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.sk4 div{background:#fff;border-radius:14px;padding:14px;text-align:center;box-shadow:0 2px 10px rgba(15,40,90,.07);cursor:default}
+.sk4 b{display:block;font-size:28px;color:var(--b800)}.sk4 span{font-size:12.5px;color:var(--sub)}
+.sk4 div.w b{color:#E53935}.sk4 div.cl{cursor:pointer}
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.sc{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(15,40,90,.07);padding:14px 16px;min-width:0}
+.sc h4{font-size:16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline}.sc h4 small{font-size:11.5px;color:var(--mut);font-weight:500}
+.sr{display:flex;align-items:center;gap:8px;width:100%;padding:5px 0;font-size:13.5px;text-align:left;border-radius:8px}
+.sr:hover{background:var(--b50)}
+.sr .n{flex:0 0 60px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sr .bw{flex:1;height:11px;background:var(--b50);border-radius:9px;overflow:hidden}.sr .bw i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--b800),#1E88E5)}
+.sr .c{flex:0 0 auto;min-width:34px;text-align:right;font-weight:800;color:var(--b800);white-space:nowrap}.sr .c small{font-weight:600;color:var(--mut);font-size:11.5px}
+.sr.warn .n{flex:1}.sr.warn .c{color:#E53935}
+.smore{color:var(--b700);font-weight:700;font-size:13px;padding:6px 0 0}
+.shint{background:#fff;border:2px dashed #E53935;border-radius:12px;padding:9px 14px;font-size:13px;margin-bottom:14px}.shint b{color:#E53935}
+.fxb{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 14px;background:#E3F2FD;border-bottom:1px solid #BBDEFB;color:#0D47A1;font-weight:700;font-size:14px}
+.mv{padding:14px 12px;display:flex;flex-direction:column;gap:10px}
+.mv button{background:#fff;border-radius:14px;padding:16px;text-align:left;font-weight:700;font-size:15px;box-shadow:0 2px 10px rgba(15,40,90,.07)}
+.mv button small{display:block;color:var(--sub);font-weight:500;font-size:12.5px;margin-top:2px}
+@media(max-width:900px){.sg{grid-template-columns:repeat(2,1fr)}.sk4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){
+ .top{padding:8px 12px;flex-wrap:nowrap;gap:8px;min-height:64px}
+ .top .logo,.top small,.top .who,.wtabs{display:none}
+ .top h1{font-size:clamp(14px,4.6vw,17px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+ .top .stat,.top .btn.red{white-space:nowrap}
+ .bnav{display:flex;position:fixed;left:0;right:0;bottom:0;height:calc(70px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:#fff;border-top:1px solid var(--line);z-index:40}
+ .bnav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--mut);font-size:14px;font-weight:600;position:relative}
+ .bnav button.on{color:#E53935;font-weight:800}.bnav button.on::before{content:'';position:absolute;top:0;left:50%;width:56px;margin-left:-28px;height:3px;background:#E53935;border-radius:0 0 4px 4px}
+ .bnav svg{width:30px;height:30px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+ .wrap{padding-bottom:96px}
+ #pasteBtn,#imp,#exp{display:none}
+ .sv{padding:12px}.sk4{grid-template-columns:repeat(3,1fr);gap:8px}.sk4 .dupk{display:none}.sk4 b{font-size:22px}.sg{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
 <div class="top">
   <div class="logo">BK</div>
   <div><h1>법인행사 현황 관리</h1><small>BK Mobility</small></div>
+  <div class="wtabs" id="wtabs" hidden><button data-v="list" class="on">목록</button><button data-v="stats">통계</button></div>
   <div class="sp"></div>
   <span class="stat" id="stat" hidden></span>
   <span class="who" id="who"></span>
@@ -141,7 +182,14 @@ tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
   </div>
 
   <div id="app" hidden>
-    <div class="card">
+    <div class="sv" id="vStats" hidden></div>
+    <div class="mv" id="vMenu" hidden>
+      <button data-proxy="#pasteBtn">📋 붙여넣기로 추가<small>카톡·문자 내용을 그대로 붙여넣어 한 번에 추가</small></button>
+      <button data-proxy="#imp">엑셀 올리기<small>.xlsx · .csv 파일로 가져오기</small></button>
+      <button data-proxy="#exp">엑셀 내려받기<small>현재 명단을 파일로 저장</small></button>
+      <button data-proxy="#dupBtnM">⚠ 중복 확인<small id="dupSubM">이름·번호가 같은 항목</small></button>
+    </div>
+    <div class="card" id="vList">
       <div class="bar">
         <input class="q" id="q" type="search" placeholder="이름 · 전화번호 · 거주지 · 소개자 검색">
         <button class="btn org" id="dupBtn" hidden>⚠ 중복 0건 · 중복만 보기</button>
@@ -160,6 +208,7 @@ tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
         <button class="btn red" id="selDel" hidden>🗑 선택 삭제 (0)</button>
         <button class="btn dng" id="delAll">전체 삭제</button>
       </div>
+      <div class="fxb" id="fxBanner" hidden><span id="fxT"></span><span class="sp"></span><button class="btn ghost" id="fxOff" style="height:32px;font-size:12.5px">필터 해제</button></div>
       <div class="cnt" id="cnt"></div>
       <div class="tw" id="tw"><table>
         <thead><tr><th style="width:44px"></th><th data-k="name">이름</th><th data-k="phone">전화번호</th><th class="h" data-k="birth">생년월일</th><th data-k="res">거주지</th><th data-k="intro">소개자</th><th class="h" data-k="memo">비고</th><th></th></tr></thead>
@@ -208,11 +257,13 @@ tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
     <div class="mf"><button class="btn" id="mgCancel">취소</button><button class="btn pri" id="mgGo">합치기</button></div>
   </div>
 </div>
+<nav class="bnav" id="bnav" hidden><button data-v="list" class="on"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r=".6"/><circle cx="3.5" cy="12" r=".6"/><circle cx="3.5" cy="18" r=".6"/></svg>목록</button><button data-v="stats"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>통계</button><button data-v="menu"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>메뉴</button></nav>
 <div class="toast" id="toast" hidden></div>
 
 <script src="firebase-config.js"></script>
 <script src="bjd.js"></script>
 <script src="paste.js"></script>
+<script src="stats.js"></script>
 <script src="xlsx.full.min.js"></script>
 <script src="fb.js"></script>
 <script>
@@ -242,8 +293,8 @@ else{
  BKFB.init(cfg);
  show('#login');
  BKFB.onAuth(function(u){
-  if(!u){BKFB.stopListen();ready=false;people=[];sel={};show('#login');$('#logout').hidden=true;$('#who').textContent='';setStat('');return}
-  $('#who').textContent=u.email;$('#logout').hidden=false;show('#app');setStat('연결 중…');
+  if(!u){BKFB.stopListen();ready=false;people=[];sel={};show('#login');$('#wtabs').hidden=true;$('#bnav').hidden=true;$('#logout').hidden=true;$('#who').textContent='';setStat('');return}
+  $('#who').textContent=u.email;$('#logout').hidden=false;show('#app');setStat('연결 중…');$('#wtabs').hidden=false;$('#bnav').hidden=false;setView(view);
   BKFB.listen(function(list,meta){
    people=list;ready=true;render(false);
    setStat(meta.fromCache?'오프라인':(meta.pending?'저장 중…':'● 실시간'),meta.fromCache?'':'on');
@@ -263,6 +314,7 @@ var sel={},PAGE=80,lst=[],shownN=PAGE,narrow=window.matchMedia('(max-width:640px
 var LSP='bkevent.web.';
 function lsGet(k){try{return localStorage.getItem(LSP+k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(LSP+k,v)}catch(e){}}
+var fx=null,view='list';
 var blockDup=lsGet('block')==='1',dupIgnore={},dupMode=false,dupSet={},dupGroupsCache=[];
 try{dupIgnore=JSON.parse(lsGet('ign')||'{}')||{}}catch(e){dupIgnore={}}
 var DF=[['birth','생년월일'],['res','거주지'],['intro','소개자'],['memo','비고']];
@@ -276,6 +328,7 @@ function filterList(){
  var toks=$('#q').value.toLowerCase().split(/\s+/).filter(Boolean);
  var l=people.filter(function(p){if(!toks.length)return true;var h=(p.name+' '+p.phone+' '+digits(p.phone)+' '+p.birth+' '+p.res+' '+p.intro+' '+p.memo).toLowerCase();return toks.every(function(t){return h.indexOf(t)>=0})});
  l.sort(function(a,b){return String(a[sortK]||'').localeCompare(String(b[sortK]||''),'ko')*sortD||a.name.localeCompare(b.name,'ko')});
+ if(fx)l=l.filter(function(p){if(fx.k==='intro')return p.intro===fx.v;if(fx.k==='res')return p.res===fx.v;return BKStats.match(p,fx)});
  if(dupMode){l=l.filter(function(p){return dupSet[p.id]});l.sort(function(a,b){return a.name.localeCompare(b.name,'ko')||nameKey(a).localeCompare(nameKey(b))});}
  l.forEach(function(p,i){p.__gs=dupMode&&(i===0||nameKey(l[i-1])!==nameKey(p))});
  return l}
@@ -290,10 +343,11 @@ function render(reset){
  if(dupMode&&!dupGroupsCache.length)dupMode=false;
  lst=filterList();
  updateDupUi();
+ updateFx();renderStats();
  if(reset!==false)shownN=PAGE;
  var ok={};lst.forEach(function(p){ok[p.id]=1});Object.keys(sel).forEach(function(id){if(!ok[id])delete sel[id]});
  var q=$('#q').value.trim();
- $('#cnt').innerHTML=q?'검색 결과 <b>'+lst.length+'</b>명 / 전체 '+people.length+'명':'전체 <b>'+people.length+'</b>명';
+ $('#cnt').innerHTML=(q||fx)?'검색 결과 <b>'+lst.length+'</b>명 / 전체 '+people.length+'명':'전체 <b>'+people.length+'</b>명';
  var part=lst.slice(0,shownN);
  if(narrow.matches){$('#tb').innerHTML='';$('#cards').innerHTML=part.map(cardHtml).join('')}
  else{$('#cards').innerHTML='';$('#tb').innerHTML=part.map(rowHtml).join('')}
@@ -435,6 +489,52 @@ $('#pGo').onclick=function(){var memo=$('#pMemo').value.trim(),ops=[],n=0;
   if(!d.name||digits(d.phone).length<9)return;d.id=BKFB.newId();d.ts=Date.now();ops.push({t:'set',p:d});n++});
  if(!n)return;$('#pb').hidden=true;
  BKFB.batch(ops).then(function(){toast(n+'명을 추가했어요')}).catch(function(e){toast(fbErr(e))})};
+
+/* 목록 / 통계 / 메뉴 */
+function setView(v){view=v;
+ $('#vList').hidden=v!=='list';$('#vStats').hidden=v!=='stats';$('#vMenu').hidden=v!=='menu';
+ document.querySelectorAll('#wtabs button,#bnav button').forEach(function(b){var on=b.getAttribute('data-v')===v||(v==='menu'&&b.getAttribute('data-v')==='menu');b.classList.toggle('on',on)});
+ window.scrollTo(0,0)}
+document.addEventListener('click',function(e){var b=e.target.closest('#wtabs button,#bnav button');if(b){var v=b.getAttribute('data-v');if(v==='menu'&&!narrow.matches)v='list';setView(v);return}
+ var pr=e.target.closest('[data-proxy]');if(pr){var t=pr.getAttribute('data-proxy');if(t==='#dupBtnM'){if(dupGroupsCache.length){dupMode=true;setView('list');render(true)}else toast('중복이 없어요');return}
+  setView('list');$(t).click()}});
+narrow.addEventListener&&narrow.addEventListener('change',function(){if(view==='menu'&&!narrow.matches)setView('list')});
+function updateFx(){$('#fxBanner').hidden=!fx;if(fx)$('#fxT').textContent='필터: '+(fx.k==='intro'?'소개자 '+fx.v:fx.k==='res'?'거주지 '+fx.v:BKStats.label(fx))}
+$('#fxOff').onclick=function(){fx=null;render(true)};
+function sbars(arr,kind,opt){opt=opt||{};var max=Math.max.apply(null,arr.map(function(x){return x.n}))||1,lim=opt.all?arr.length:(opt.limit||arr.length),h='';
+ arr.slice(0,lim).forEach(function(it){var pct=opt.total?' <small>· '+Math.round(it.n/opt.total*100)+'%</small>':'';
+  h+='<button class="sr" data-sk="'+(it.sk||kind)+'" data-sv="'+esc(it.sv||it.k)+'"><span class="n">'+esc(it.k)+'</span><span class="bw"><i style="width:'+Math.max(5,Math.round(it.n/max*100))+'%'+(it.gray?';background:#bbb':'')+'"></i></span><span class="c">'+it.n+pct+'</span></button>'});
+ if(!opt.all&&arr.length>lim)h+='<div class="smore" data-more="'+kind+'">더 보기 ('+arr.length+') ›</div>';
+ return h}
+var statMore={};
+function countBy(key){var m={};people.forEach(function(p){var v=String(p[key]||'').trim();if(v)m[v]=(m[v]||0)+1});return Object.keys(m).map(function(k){return{k:k,n:m[k]}}).sort(function(a,b){return b.n-a.n||a.k.localeCompare(b.k,'ko')})}
+function renderStats(){
+ var vs=$('#vStats');if(!vs)return;
+ var intro=countBy('intro'),res=countBy('res'),K=BKStats,ms=K.missing(people),reg=K.regions(people);
+ if(ms.res)reg.push({k:'미입력',n:ms.res,sk:'miss',sv:'res',gray:true});
+ var dupN=dupGroupsCache.length;
+ var o=function(kind,def){return statMore[kind]?{all:true}:{limit:def}};
+ var inp='';[['res','거주지 없음'],['intro','소개자 없음'],['memo','비고 없음'],['birth','생년월일 없음']].forEach(function(r){inp+='<button class="sr warn" data-sk="miss" data-sv="'+r[0]+'"><span class="n">'+r[1]+'</span><span class="c">'+ms[r[0]]+'명 ›</span></button>'});
+ inp+='<button class="sr warn" data-dup="1"><span class="n">중복 (이름·번호 같음)</span><span class="c">'+dupN+'건 ›</span></button>';
+ var recent=people.filter(function(p){return p.ts>0}).sort(function(a,b){return b.ts-a.ts}).slice(0,5);
+ var rec=recent.map(function(p){return'<button class="sr" data-rid="'+esc(p.id)+'"><span class="n" style="flex:1"><b>'+esc(p.name)+'</b> <small style="color:var(--sub)">'+esc(p.phone)+(p.res?' · '+esc(p.res):'')+'</small></span></button>'}).join('');
+ vs.innerHTML='<div class="shint"><b>항목을 누르면</b> 목록 탭으로 이동해서 그 사람들만 보여줘요</div>'+
+  '<div class="sk4"><div><b>'+people.length+'</b><span>총 인원</span></div><div><b>'+intro.length+'</b><span>소개자</span></div><div><b>'+res.length+'</b><span>거주지</span></div><div class="w dupk cl" data-dup="1"><b>'+dupN+'</b><span>중복 건</span></div></div>'+
+  '<div class="sg">'+
+  '<div class="sc"><h4>소개자별 인원 <small>상위 8</small></h4>'+sbars(intro,'intro',o('intro',8))+'</div>'+
+  '<div class="sc"><h4>거주지별 인원 <small>동네 단위</small></h4>'+sbars(res,'res',o('res',8))+'</div>'+
+  '<div class="sc"><h4>권역(시·도)별 인원 <small>큰 지역 단위</small></h4>'+sbars(reg,'region',Object.assign({total:Math.max(1,people.length-ms.res)},o('region',8)))+'</div>'+
+  '<div class="sc"><h4>연령대별 인원</h4>'+sbars(K.ages(people),'age',{all:true})+'</div>'+
+  '<div class="sc"><h4>비고(구분)별 인원</h4>'+sbars(K.memos(people),'memo',o('memo',6))+'</div>'+
+  '<div class="sc"><h4>입력 현황 <small>누르면 해당 사람만 표시</small></h4>'+inp+'</div>'+
+  (rec?'<div class="sc" style="grid-column:1/-1"><h4>최근 등록 <small>신규로 추가한 순서</small></h4>'+rec+'</div>':'')+'</div>';
+ $('#dupSubM').textContent=dupN?'이름·번호가 같은 항목 '+dupN+'건':'중복이 없어요'}
+$('#vStats').onclick=function(e){
+ var mo=e.target.closest('[data-more]');if(mo){var k=mo.getAttribute('data-more');statMore[k]=true;renderStats();return}
+ if(e.target.closest('[data-dup]')){if(dupGroupsCache.length){fx=null;dupMode=true;setView('list');render(true)}return}
+ var r=e.target.closest('[data-rid]');if(r){setView('list');openModal(r.getAttribute('data-rid'));return}
+ var b=e.target.closest('[data-sk]');if(!b)return;
+ fx={k:b.getAttribute('data-sk'),v:b.getAttribute('data-sv')};dupMode=false;$('#q').value='';setView('list');render(true)};
 
 /* 추가/수정/삭제 */
 function find(id){return people.filter(function(p){return p.id===id})[0]||null}
