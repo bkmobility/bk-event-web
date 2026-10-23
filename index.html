@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BK 법인행사 현황 관리 - 웹</title>
+<title>BK 법인행사 현황 관리</title>
 <style>
 :root{--b700:#1976D2;--b800:#1565C0;--b100:#DCEBFB;--b50:#F0F6FD;--ink:#16202E;--sub:#5B6676;--mut:#8A94A3;--line:#E3E8EF;--bg:#F4F6FA;--red:#D32F2F;--red-bg:#FDECEC;--green:#1B7A3E;--green-bg:#E3F6EA}
 *{box-sizing:border-box;margin:0}
@@ -29,6 +29,8 @@ label.f input:focus{border-color:var(--b700);background:#fff}
 .btn{height:42px;padding:0 18px;border-radius:11px;font-weight:700;background:#EEF1F5}
 .btn.pri{background:linear-gradient(135deg,var(--b700),var(--b800));color:#fff}
 .btn.dng{background:var(--red-bg);color:var(--red)}
+.btn.red{background:#E53935;color:#fff;box-shadow:0 2px 6px rgba(229,57,53,.4)}
+.btn.ghost{background:#fff;border:1.5px solid var(--line)}
 .btn.w{width:100%;margin-top:16px;height:46px}
 .err{color:var(--red);font-size:13.5px;font-weight:600;margin-top:10px}
 .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px;border-bottom:1px solid var(--line)}
@@ -58,17 +60,43 @@ tr.r:hover{background:var(--b50)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#16202E;color:#fff;padding:11px 18px;border-radius:12px;z-index:90;font-size:14px}
 .setup{max-width:560px;margin:50px auto;padding:24px;line-height:1.6}
 [hidden]{display:none!important}
-@media(max-width:640px){th.h,td.h{display:none}}
+input[type=checkbox].c{width:20px;height:20px;accent-color:var(--b700);margin:0;vertical-align:middle;cursor:pointer}
+.selbar{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;font-size:14px}
+.selbar label{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--sub);cursor:pointer}
+.selbar .cntx{color:var(--b800);font-weight:700}
+.selbar .btn{height:34px;font-size:13.5px}
+tr.sel td{background:#EAF3FE}
+.cards{display:none}
+.pcard{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(15,40,90,.08);margin:10px 12px;padding:13px 14px}
+.pcard.sel{background:#EAF3FE;box-shadow:inset 0 0 0 1.5px var(--b700)}
+.pc-h{display:flex;align-items:center;gap:10px}.pc-h b{font-size:17px}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;background:#EEF1F5;color:var(--sub)}
+.pc-ph{margin-top:6px;font-weight:700;color:var(--b800);font-size:15px}.pc-ph a{color:inherit;text-decoration:none}
+.tiles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px}
+.tile{background:#F4F6FA;border-radius:10px;padding:7px 9px;min-width:0}.tile small{display:block;color:var(--mut);font-size:11px;font-weight:600}.tile b{font-size:13.5px;display:block;margin-top:1px;word-break:keep-all;overflow-wrap:anywhere}
+.pc-f{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;border-top:1px solid var(--line);padding-top:9px}
+.pc-f button{padding:6px 14px;border-radius:9px;background:var(--b50);color:var(--b800);font-weight:700;font-size:13px}.pc-f button.d{background:var(--red-bg);color:var(--red)}
+.pc-memo{margin-top:8px;color:var(--sub);font-size:12.5px}
+.sentinel{height:1px}
+.top .btn.red{height:36px;padding:0 15px;font-size:13.5px}
+@media(max-width:640px){
+ .tw{display:none}.cards{display:block}
+ .wrap{padding:10px 0 60px}
+ .card{border-radius:0;box-shadow:none;background:transparent}
+ .bar{background:#fff;margin:0 12px;border-radius:14px;border:0;box-shadow:0 2px 10px rgba(15,40,90,.07)}
+ .selbar{border:0;padding:10px 16px}
+ .cnt{padding:8px 16px}
+}
 </style>
 </head>
 <body>
 <div class="top">
   <div class="logo">BK</div>
-  <div><h1>법인행사 현황 관리 · 웹</h1><small>BK Mobility</small></div>
+  <div><h1>법인행사 현황 관리</h1><small>BK Mobility</small></div>
   <div class="sp"></div>
   <span class="stat" id="stat" hidden></span>
   <span class="who" id="who"></span>
-  <button class="btn" id="logout" hidden>로그아웃</button>
+  <button class="btn red" id="logout" hidden>로그아웃</button>
 </div>
 
 <div class="wrap">
@@ -95,11 +123,21 @@ tr.r:hover{background:var(--b50)}
         <button class="btn" id="exp">엑셀 내려받기</button>
         <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
       </div>
+      <div class="selbar" id="selbar">
+        <label><input type="checkbox" class="c" id="selAll"> 전체 선택</label>
+        <span class="cntx" id="selCnt"></span>
+        <span class="sp"></span>
+        <button class="btn ghost" id="selClear" hidden>선택 해제</button>
+        <button class="btn red" id="selDel" hidden>🗑 선택 삭제 (0)</button>
+        <button class="btn dng" id="delAll">전체 삭제</button>
+      </div>
       <div class="cnt" id="cnt"></div>
-      <div class="tw"><table>
-        <thead><tr><th data-k="name">이름</th><th data-k="phone">전화번호</th><th class="h" data-k="birth">생년월일</th><th data-k="res">거주지</th><th data-k="intro">소개자</th><th class="h" data-k="memo">비고</th><th></th></tr></thead>
+      <div class="tw" id="tw"><table>
+        <thead><tr><th style="width:44px"></th><th data-k="name">이름</th><th data-k="phone">전화번호</th><th class="h" data-k="birth">생년월일</th><th data-k="res">거주지</th><th data-k="intro">소개자</th><th class="h" data-k="memo">비고</th><th></th></tr></thead>
         <tbody id="tb"></tbody>
-      </table></div>
+      </table><div class="sentinel" id="sentT"></div></div>
+      <div class="cards" id="cards"></div>
+      <div class="sentinel" id="sentC"></div>
       <div class="empty" id="empty" hidden>표시할 사람이 없어요</div>
     </div>
   </div>
@@ -151,10 +189,10 @@ else{
  BKFB.init(cfg);
  show('#login');
  BKFB.onAuth(function(u){
-  if(!u){BKFB.stopListen();ready=false;people=[];show('#login');$('#logout').hidden=true;$('#who').textContent='';setStat('');return}
+  if(!u){BKFB.stopListen();ready=false;people=[];sel={};show('#login');$('#logout').hidden=true;$('#who').textContent='';setStat('');return}
   $('#who').textContent=u.email;$('#logout').hidden=false;show('#app');setStat('연결 중…');
   BKFB.listen(function(list,meta){
-   people=list;ready=true;render();
+   people=list;ready=true;render(false);
    setStat(meta.fromCache?'오프라인':(meta.pending?'저장 중…':'● 실시간'),meta.fromCache?'':'on');
   },function(e){setStat('오류','err');toast(fbErr(e))});
  });
@@ -168,20 +206,80 @@ $('#lPw').onkeydown=function(e){if(e.key==='Enter')$('#lGo').click()};
 $('#logout').onclick=function(){BKFB.signOut()};
 
 /* 목록 */
-function render(){
+var sel={},PAGE=80,lst=[],shownN=PAGE,narrow=window.matchMedia('(max-width:640px)');
+function filterList(){
  var toks=$('#q').value.toLowerCase().split(/\s+/).filter(Boolean);
  var l=people.filter(function(p){if(!toks.length)return true;var h=(p.name+' '+p.phone+' '+digits(p.phone)+' '+p.birth+' '+p.res+' '+p.intro+' '+p.memo).toLowerCase();return toks.every(function(t){return h.indexOf(t)>=0})});
  l.sort(function(a,b){return String(a[sortK]||'').localeCompare(String(b[sortK]||''),'ko')*sortD||a.name.localeCompare(b.name,'ko')});
- $('#cnt').innerHTML=toks.length?'검색 결과 <b>'+l.length+'</b>명 / 전체 '+people.length+'명':'전체 <b>'+people.length+'</b>명';
- var shown=l.slice(0,500);
- $('#tb').innerHTML=shown.map(function(p){return '<tr class="r" data-id="'+esc(p.id)+'"><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.phone)+'</td><td class="h">'+esc(p.birth)+'</td><td>'+esc(p.res)+'</td><td>'+esc(p.intro)+'</td><td class="h m">'+esc(p.memo)+'</td><td class="acts"><button data-a="e">수정</button><button class="d" data-a="d">삭제</button></td></tr>'}).join('');
- $('#empty').hidden=l.length>0;
- if(l.length>500)$('#cnt').innerHTML+=' · 상위 500명만 표시 (검색으로 좁혀 보세요)';
+ return l}
+function rowHtml(p){return '<tr class="r'+(sel[p.id]?' sel':'')+'" data-id="'+esc(p.id)+'"><td><input type="checkbox" class="c" data-id="'+esc(p.id)+'"'+(sel[p.id]?' checked':'')+' aria-label="선택"></td><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.phone)+'</td><td class="h">'+esc(p.birth)+'</td><td>'+esc(p.res)+'</td><td>'+esc(p.intro)+'</td><td class="h m">'+esc(p.memo)+'</td><td class="acts"><button data-a="e">수정</button><button class="d" data-a="d">삭제</button></td></tr>'}
+function cardHtml(p){var tag=p.memo?'<span class="pill">'+esc(p.memo)+'</span>':'';
+ return '<div class="pcard'+(sel[p.id]?' sel':'')+'" data-id="'+esc(p.id)+'"><div class="pc-h"><input type="checkbox" class="c" data-id="'+esc(p.id)+'"'+(sel[p.id]?' checked':'')+' aria-label="선택"><b>'+esc(p.name)+'</b>'+tag+'</div>'+
+ '<div class="pc-ph">☎ '+(p.phone?'<a href="tel:'+esc(digits(p.phone))+'">'+esc(p.phone)+'</a>':'-')+'</div>'+
+ '<div class="tiles"><div class="tile"><small>생년월일</small><b>'+(esc(p.birth)||'-')+'</b></div><div class="tile"><small>거주지</small><b>'+(esc(p.res)||'-')+'</b></div><div class="tile"><small>소개자</small><b>'+(esc(p.intro)||'-')+'</b></div></div>'+
+ '<div class="pc-f"><button data-a="e">수정</button><button class="d" data-a="d">삭제</button></div></div>'}
+function render(reset){
+ lst=filterList();
+ if(reset!==false)shownN=PAGE;
+ var ok={};lst.forEach(function(p){ok[p.id]=1});Object.keys(sel).forEach(function(id){if(!ok[id])delete sel[id]});
+ var q=$('#q').value.trim();
+ $('#cnt').innerHTML=q?'검색 결과 <b>'+lst.length+'</b>명 / 전체 '+people.length+'명':'전체 <b>'+people.length+'</b>명';
+ var part=lst.slice(0,shownN);
+ if(narrow.matches){$('#tb').innerHTML='';$('#cards').innerHTML=part.map(cardHtml).join('')}
+ else{$('#cards').innerHTML='';$('#tb').innerHTML=part.map(rowHtml).join('')}
+ $('#empty').hidden=lst.length>0;
+ updateSel();rewatch();
 }
-$('#q').oninput=render;
-document.querySelector('thead').onclick=function(e){var th=e.target.closest('th[data-k]');if(!th)return;var k=th.getAttribute('data-k');if(sortK===k)sortD=-sortD;else{sortK=k;sortD=1}render()};
-$('#tb').onclick=function(e){var tr=e.target.closest('tr');if(!tr)return;var id=tr.getAttribute('data-id'),b=e.target.closest('button');
- if(b&&b.getAttribute('data-a')==='d'){del(id);return}openModal(id)};
+function more(){
+ if(shownN>=lst.length)return;
+ var from=shownN;shownN=Math.min(lst.length,shownN+PAGE);
+ var part=lst.slice(from,shownN);
+ if(narrow.matches)$('#cards').insertAdjacentHTML('beforeend',part.map(cardHtml).join(''));
+ else $('#tb').insertAdjacentHTML('beforeend',part.map(rowHtml).join(''));
+ rewatch();
+}
+var ioT=null,ioC=null;
+function rewatch(){
+ if(!('IntersectionObserver' in window))return;
+ if(!ioT){ioT=new IntersectionObserver(function(e){if(e[0].isIntersecting&&!narrow.matches)more()},{root:$('#tw'),rootMargin:'400px'});
+  ioC=new IntersectionObserver(function(e){if(e[0].isIntersecting&&narrow.matches)more()},{rootMargin:'600px'})}
+ ioT.unobserve($('#sentT'));ioT.observe($('#sentT'));ioC.unobserve($('#sentC'));ioC.observe($('#sentC'));
+}
+(narrow.addEventListener?narrow.addEventListener('change',function(){render(true)}):narrow.addListener(function(){render(true)}));
+function selCount(){return Object.keys(sel).length}
+function updateSel(){
+ var n=selCount(),a=$('#selAll');
+ a.checked=lst.length>0&&n===lst.length;a.indeterminate=n>0&&n<lst.length;
+ $('#selCnt').textContent=n?n+'명 선택됨 (전체 '+lst.length+'명 중)':'';
+ $('#selClear').hidden=!n;$('#selDel').hidden=!n;$('#selDel').textContent='🗑 선택 삭제 ('+n+')';
+ document.querySelectorAll('#tb tr.r,#cards .pcard').forEach(function(el){var on=!!sel[el.getAttribute('data-id')];el.classList.toggle('sel',on);var c=el.querySelector('input.c');if(c)c.checked=on});
+}
+$('#selAll').onchange=function(){sel={};if(this.checked)lst.forEach(function(p){sel[p.id]=1});updateSel()};
+$('#selClear').onclick=function(){sel={};updateSel()};
+function delMany(ids,label){
+ var ops=ids.map(function(id){return{t:'del',id:id}});toast('삭제하는 중…');
+ BKFB.batch(ops).then(function(){sel={};toast(label+' '+ids.length+'명을 삭제했어요')}).catch(function(e){toast(fbErr(e))});
+}
+$('#selDel').onclick=function(){var ids=Object.keys(sel);if(!ids.length)return;
+ if(confirm('선택한 '+ids.length+'명을 삭제할까요?\n앱(모든 폰)에서도 삭제됩니다.'))delMany(ids,'선택한')};
+$('#delAll').onclick=function(){
+ var ids=lst.map(function(p){return p.id});if(!ids.length){toast('삭제할 사람이 없어요');return}
+ var scope=$('#q').value.trim()?'현재 검색 결과':'명단 전체';
+ if(!confirm(scope+' '+ids.length+'명을 삭제할까요?\n앱(모든 폰)에서도 삭제됩니다.'))return;
+ if(!confirm('정말 '+ids.length+'명을 모두 삭제할까요?\n되돌릴 수 없어요. (마지막 확인)'))return;
+ delMany(ids,'전체');
+};
+function onRow(e){
+ var el=e.target.closest('tr.r,.pcard');if(!el)return;var id=el.getAttribute('data-id');
+ if(e.target.closest('input.c'))return;
+ var b=e.target.closest('button');
+ if(b&&b.getAttribute('data-a')==='d'){del(id);return}
+ if(e.target.closest('a'))return;
+ openModal(id)}
+function onChk(e){var c=e.target.closest('input.c');if(!c)return;var id=c.getAttribute('data-id');if(c.checked)sel[id]=1;else delete sel[id];updateSel()}
+$('#tb').onclick=onRow;$('#cards').onclick=onRow;$('#tb').onchange=onChk;$('#cards').onchange=onChk;
+$('#q').oninput=function(){render(true)};
+document.querySelector('thead').onclick=function(e){var th=e.target.closest('th[data-k]');if(!th)return;var k=th.getAttribute('data-k');if(sortK===k)sortD=-sortD;else{sortK=k;sortD=1}render(true)};
 
 /* 추가/수정/삭제 */
 function find(id){return people.filter(function(p){return p.id===id})[0]||null}
