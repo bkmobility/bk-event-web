@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BK 법인행사 현황 관리 - 웹</title>
+<style>
+:root{--b700:#1976D2;--b800:#1565C0;--b100:#DCEBFB;--b50:#F0F6FD;--ink:#16202E;--sub:#5B6676;--mut:#8A94A3;--line:#E3E8EF;--bg:#F4F6FA;--red:#D32F2F;--red-bg:#FDECEC;--green:#1B7A3E;--green-bg:#E3F6EA}
+*{box-sizing:border-box;margin:0}
+body{font-family:"Noto Sans KR","Malgun Gothic",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+input,textarea{font:inherit}
+.top{background:linear-gradient(135deg,var(--b800),var(--b700));color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);display:grid;place-items:center;font-weight:800}
+.top h1{font-size:18px;font-weight:800}
+.top small{display:block;opacity:.85;font-size:12.5px}
+.sp{flex:1}
+.stat{font-size:12.5px;font-weight:700;padding:4px 11px;border-radius:99px;background:rgba(255,255,255,.2)}
+.stat.on{background:#E3F6EA;color:#1B7A3E}.stat.err{background:#FFE6E6;color:#C62828}
+.who{font-size:13px;opacity:.95}
+.wrap{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
+.card{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(15,40,90,.07)}
+.login{max-width:380px;margin:60px auto;padding:26px}
+.login h2{font-size:20px;margin-bottom:4px}
+.login p{color:var(--sub);font-size:13.5px;margin-bottom:14px}
+label.f{display:block;margin-top:12px;font-size:13px;font-weight:700;color:var(--sub)}
+label.f input{display:block;width:100%;margin-top:5px;height:44px;border:1.5px solid var(--line);border-radius:11px;padding:0 12px;outline:0;background:#FAFBFD;color:var(--ink)}
+label.f input:focus{border-color:var(--b700);background:#fff}
+.btn{height:42px;padding:0 18px;border-radius:11px;font-weight:700;background:#EEF1F5}
+.btn.pri{background:linear-gradient(135deg,var(--b700),var(--b800));color:#fff}
+.btn.dng{background:var(--red-bg);color:var(--red)}
+.btn.w{width:100%;margin-top:16px;height:46px}
+.err{color:var(--red);font-size:13.5px;font-weight:600;margin-top:10px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px;border-bottom:1px solid var(--line)}
+.bar input.q{flex:1;min-width:200px;height:42px;border:1.5px solid var(--line);border-radius:11px;padding:0 13px;outline:0}
+.bar input.q:focus{border-color:var(--b700)}
+.cnt{color:var(--sub);font-size:13.5px;padding:10px 14px}
+.cnt b{color:var(--b800)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 12px;text-align:left;border-top:1px solid var(--line);font-size:14.5px;white-space:nowrap}
+th{background:var(--b50);color:var(--sub);font-size:13px;position:sticky;top:0;cursor:pointer;user-select:none}
+td.m{white-space:normal;color:var(--sub)}
+tr.r:hover{background:var(--b50)}
+.tw{overflow:auto;max-height:68vh}
+.acts button{padding:5px 10px;border-radius:8px;background:var(--b50);color:var(--b800);font-weight:700;font-size:13px;margin-right:4px}
+.acts button.d{background:var(--red-bg);color:var(--red)}
+.modal-b{position:fixed;inset:0;background:rgba(10,20,40,.5);z-index:50;display:grid;place-items:center;padding:14px}
+.modal{background:#fff;border-radius:18px;width:100%;max-width:440px;padding:20px 22px;max-height:94vh;overflow:auto}
+.modal h3{font-size:18px;margin-bottom:2px}
+.mf{display:flex;gap:8px;margin-top:18px;justify-content:flex-end}
+.sugw{position:relative}
+.sug{position:absolute;left:0;right:0;top:100%;z-index:5;background:#fff;border:1.5px solid var(--b100);border-radius:11px;box-shadow:0 10px 26px rgba(15,40,90,.2);max-height:230px;overflow:auto}
+.sug button{display:block;width:100%;text-align:left;padding:9px 12px;border-top:1px solid var(--line)}
+.sug button:first-child{border-top:0}.sug button:hover{background:var(--b50)}
+.sug small{display:block;color:var(--mut);font-size:12px}
+.hint{color:var(--sub);font-size:12.5px;margin-top:6px}
+.empty{padding:40px;text-align:center;color:var(--mut)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#16202E;color:#fff;padding:11px 18px;border-radius:12px;z-index:90;font-size:14px}
+.setup{max-width:560px;margin:50px auto;padding:24px;line-height:1.6}
+[hidden]{display:none!important}
+@media(max-width:640px){th.h,td.h{display:none}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">BK</div>
+  <div><h1>법인행사 현황 관리 · 웹</h1><small>BK Mobility</small></div>
+  <div class="sp"></div>
+  <span class="stat" id="stat" hidden></span>
+  <span class="who" id="who"></span>
+  <button class="btn" id="logout" hidden>로그아웃</button>
+</div>
+
+<div class="wrap">
+  <div class="card setup" id="setup" hidden>
+    <h2>먼저 설정이 필요해요</h2>
+    <p style="margin-top:8px">이 폴더의 <b>firebase-config.js</b> 파일에 Firebase 설정값을 넣은 뒤 다시 올려 주세요.<br>자세한 방법은 <b>웹동기화_설정가이드</b>의 5단계를 보세요.</p>
+  </div>
+
+  <div class="card login" id="login" hidden>
+    <h2>로그인</h2>
+    <p>관리자로 등록된 이메일만 사용할 수 있어요.</p>
+    <label class="f">이메일<input id="lEmail" type="email" autocomplete="username"></label>
+    <label class="f">비밀번호<input id="lPw" type="password" autocomplete="current-password"></label>
+    <p class="err" id="lErr" hidden></p>
+    <button class="btn pri w" id="lGo">로그인</button>
+  </div>
+
+  <div id="app" hidden>
+    <div class="card">
+      <div class="bar">
+        <input class="q" id="q" type="search" placeholder="이름 · 전화번호 · 거주지 · 소개자 검색">
+        <button class="btn pri" id="add">+ 새로 추가</button>
+        <button class="btn" id="imp">엑셀 올리기</button>
+        <button class="btn" id="exp">엑셀 내려받기</button>
+        <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
+      </div>
+      <div class="cnt" id="cnt"></div>
+      <div class="tw"><table>
+        <thead><tr><th data-k="name">이름</th><th data-k="phone">전화번호</th><th class="h" data-k="birth">생년월일</th><th data-k="res">거주지</th><th data-k="intro">소개자</th><th class="h" data-k="memo">비고</th><th></th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table></div>
+      <div class="empty" id="empty" hidden>표시할 사람이 없어요</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-b" id="mb" hidden>
+  <div class="modal">
+    <h3 id="mt">새로 추가</h3>
+    <label class="f">이름 *<input id="fName" maxlength="30" autocomplete="off"></label>
+    <label class="f">전화번호 *<input id="fPhone" maxlength="14" inputmode="tel" autocomplete="off" placeholder="010-0000-0000"></label>
+    <label class="f">생년월일 (6자리)<input id="fBirth" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="예) 790101"></label>
+    <div class="sugw"><label class="f">거주지 (법정동 검색)<input id="fRes" maxlength="40" autocomplete="off" placeholder="동네 이름을 입력하세요 (예: 역동)"></label><div class="sug" hidden></div></div>
+    <div class="sugw"><label class="f">소개자<input id="fIntro" maxlength="30" autocomplete="off"></label><div class="sug" hidden></div></div>
+    <label class="f">비고<input id="fMemo" maxlength="40" autocomplete="off"></label>
+    <p class="err" id="mErr" hidden></p>
+    <div class="mf"><button class="btn dng" id="mDel" hidden>삭제</button><div class="sp"></div><button class="btn" id="mCancel">취소</button><button class="btn pri" id="mSave">저장</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="firebase-config.js"></script>
+<script src="bjd.js"></script>
+<script src="xlsx.full.min.js"></script>
+<script src="fb.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function digits(s){return String(s||'').replace(/\D/g,'')}
+function fmtPhone(s){var d=digits(s);if(d.length===11)return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);if(d.length===10){if(d.slice(0,2)==='02')return '02-'+d.slice(2,6)+'-'+d.slice(6);return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6)}return String(s||'').trim()}
+var toastT;function toast(m){var t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){t.hidden=true},2600)}
+
+var cfg=window.BK_WEB_CONFIG||{};
+var people=[],sortK='name',sortD=1,editId=null,ready=false;
+
+function show(id){['#setup','#login','#app'].forEach(function(s){$(s).hidden=(s!==id)})}
+function setStat(t,c){var s=$('#stat');s.hidden=!t;s.textContent=t;s.className='stat '+(c||'')}
+function fbErr(e){var c=(e&&e.code)||'';
+ if(/invalid-credential|wrong-password|user-not-found|invalid-email/.test(c))return '이메일 또는 비밀번호가 올바르지 않아요.';
+ if(/too-many/.test(c))return '시도가 너무 많아요. 잠시 후 다시 해 주세요.';
+ if(/network/.test(c))return '인터넷 연결을 확인해 주세요.';
+ if(/permission-denied/.test(c))return '권한이 없어요. 허용된 이메일인지 확인해 주세요.';
+ return '오류가 발생했어요. ('+(c||(e&&e.message)||'')+')'}
+
+if(!cfg.apiKey||!cfg.projectId){show('#setup')}
+else{
+ if(!cfg.authDomain)cfg.authDomain=cfg.projectId+'.firebaseapp.com';
+ BKFB.init(cfg);
+ show('#login');
+ BKFB.onAuth(function(u){
+  if(!u){BKFB.stopListen();ready=false;people=[];show('#login');$('#logout').hidden=true;$('#who').textContent='';setStat('');return}
+  $('#who').textContent=u.email;$('#logout').hidden=false;show('#app');setStat('연결 중…');
+  BKFB.listen(function(list,meta){
+   people=list;ready=true;render();
+   setStat(meta.fromCache?'오프라인':(meta.pending?'저장 중…':'● 실시간'),meta.fromCache?'':'on');
+  },function(e){setStat('오류','err');toast(fbErr(e))});
+ });
+}
+$('#lGo').onclick=function(){
+ var e=$('#lEmail').value.trim(),p=$('#lPw').value,er=$('#lErr');er.hidden=true;
+ if(!e||!p){er.textContent='이메일과 비밀번호를 입력해 주세요.';er.hidden=false;return}
+ BKFB.signIn(e,p).catch(function(x){er.textContent=fbErr(x);er.hidden=false});
+};
+$('#lPw').onkeydown=function(e){if(e.key==='Enter')$('#lGo').click()};
+$('#logout').onclick=function(){BKFB.signOut()};
+
+/* 목록 */
+function render(){
+ var toks=$('#q').value.toLowerCase().split(/\s+/).filter(Boolean);
+ var l=people.filter(function(p){if(!toks.length)return true;var h=(p.name+' '+p.phone+' '+digits(p.phone)+' '+p.birth+' '+p.res+' '+p.intro+' '+p.memo).toLowerCase();return toks.every(function(t){return h.indexOf(t)>=0})});
+ l.sort(function(a,b){return String(a[sortK]||'').localeCompare(String(b[sortK]||''),'ko')*sortD||a.name.localeCompare(b.name,'ko')});
+ $('#cnt').innerHTML=toks.length?'검색 결과 <b>'+l.length+'</b>명 / 전체 '+people.length+'명':'전체 <b>'+people.length+'</b>명';
+ var shown=l.slice(0,500);
+ $('#tb').innerHTML=shown.map(function(p){return '<tr class="r" data-id="'+esc(p.id)+'"><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.phone)+'</td><td class="h">'+esc(p.birth)+'</td><td>'+esc(p.res)+'</td><td>'+esc(p.intro)+'</td><td class="h m">'+esc(p.memo)+'</td><td class="acts"><button data-a="e">수정</button><button class="d" data-a="d">삭제</button></td></tr>'}).join('');
+ $('#empty').hidden=l.length>0;
+ if(l.length>500)$('#cnt').innerHTML+=' · 상위 500명만 표시 (검색으로 좁혀 보세요)';
+}
+$('#q').oninput=render;
+document.querySelector('thead').onclick=function(e){var th=e.target.closest('th[data-k]');if(!th)return;var k=th.getAttribute('data-k');if(sortK===k)sortD=-sortD;else{sortK=k;sortD=1}render()};
+$('#tb').onclick=function(e){var tr=e.target.closest('tr');if(!tr)return;var id=tr.getAttribute('data-id'),b=e.target.closest('button');
+ if(b&&b.getAttribute('data-a')==='d'){del(id);return}openModal(id)};
+
+/* 추가/수정/삭제 */
+function find(id){return people.filter(function(p){return p.id===id})[0]||null}
+function openModal(id){
+ editId=id||null;var p=id?find(id):null;
+ $('#mt').textContent=p?'정보 수정':'새로 추가';
+ $('#fName').value=p?p.name:'';$('#fPhone').value=p?p.phone:'';$('#fBirth').value=p?p.birth:'';$('#fRes').value=p?p.res:'';$('#fIntro').value=p?p.intro:'';$('#fMemo').value=p?p.memo:'';
+ $('#mDel').hidden=!p;$('#mErr').hidden=true;$('#mb').hidden=false;
+ setTimeout(function(){$('#fName').focus()},50);
+}
+function closeModal(){$('#mb').hidden=true;hideSug()}
+$('#add').onclick=function(){openModal(null)};
+$('#mCancel').onclick=closeModal;
+$('#mb').onclick=function(e){if(e.target===$('#mb'))closeModal()};
+$('#fBirth').oninput=function(){this.value=digits(this.value).slice(0,6)};
+$('#fPhone').onblur=function(){this.value=fmtPhone(this.value)};
+$('#mSave').onclick=function(){
+ var n=$('#fName').value.trim(),ph=fmtPhone($('#fPhone').value),b=digits($('#fBirth').value),er=$('#mErr');
+ function bad(m){er.textContent=m;er.hidden=false}
+ if(!n)return bad('이름을 입력해 주세요.');
+ if(digits(ph).length<9)return bad('전화번호를 정확히 입력해 주세요.');
+ if(b&&b.length!==6)return bad('생년월일은 6자리로 입력해 주세요.');
+ var p=editId?find(editId):null;
+ var rec={id:p?p.id:BKFB.newId(),name:n,phone:ph,birth:b,res:$('#fRes').value.trim(),intro:$('#fIntro').value.trim(),memo:$('#fMemo').value.trim(),ts:Date.now()};
+ BKFB.setPerson(rec).then(function(){toast(p?'수정했어요':'추가했어요')}).catch(function(e){toast(fbErr(e))});
+ closeModal();
+};
+$('#mDel').onclick=function(){if(editId){var id=editId;closeModal();del(id)}};
+function del(id){var p=find(id);if(!p)return;if(!confirm(p.name+' ('+p.phone+')\n삭제할까요? 앱에서도 바로 사라집니다.'))return;
+ BKFB.deletePerson(id).then(function(){toast('삭제했어요')}).catch(function(e){toast(fbErr(e))})}
+
+/* 자동완성 */
+var bjd=null;
+function bjdIdx(){if(bjd)return bjd;bjd=[];var B=window.BK_BJD;if(!B)return bjd;
+ B.G.forEach(function(g){var a=B.A[g[0]],f=B.S[g[0]],h=a+' '+g[1];bjd.push({v:h,sgg:g[1],dong:'',key:(f+' '+h).toLowerCase(),sub:f});
+  g[2].forEach(function(d){var v=h+' '+d;bjd.push({v:v,sgg:g[1],dong:d,key:(f+' '+v).toLowerCase(),sub:f+' '+g[1]})})});return bjd}
+function resSug(q){var t=q.toLowerCase().split(/\s+/).filter(Boolean);if(!t.length)return[];var idx=bjdIdx(),o=[];
+ for(var i=0;i<idx.length;i++){var it=idx[i];if(!t.every(function(x){return it.key.indexOf(x)>=0}))continue;var l=t[t.length-1],sc;
+  if(it.dong&&it.dong.toLowerCase().split(' ').some(function(w){return w.indexOf(l)===0}))sc=0;else if(it.sgg.toLowerCase().indexOf(l)===0)sc=it.dong?1:0;else sc=2;o.push({sc:sc,i:i,it:it})}
+ o.sort(function(a,b){return a.sc-b.sc||a.i-b.i});return o.slice(0,40).map(function(x){return{l:x.it.v,s:x.it.sub}})}
+function introSug(q){var m={};people.forEach(function(p){if(p.intro)m[p.intro]=(m[p.intro]||0)+1});var ql=q.toLowerCase();
+ return Object.keys(m).filter(function(k){return !ql||k.toLowerCase().indexOf(ql)>=0}).sort(function(a,b){return m[b]-m[a]}).slice(0,30).map(function(k){return{l:k,s:m[k]+'명 소개'}})}
+var curSug=null;
+function hideSug(){document.querySelectorAll('.sug').forEach(function(e){e.hidden=true});curSug=null}
+function attach(id,fn){var inp=$(id),box=inp.closest('.sugw').querySelector('.sug');
+ function go(){var it=fn(inp.value.trim());if(!it.length){box.hidden=true;return}curSug=it;box.innerHTML=it.map(function(x,i){return '<button type="button" data-i="'+i+'">'+esc(x.l)+(x.s?'<small>'+esc(x.s)+'</small>':'')+'</button>'}).join('');box.hidden=false}
+ inp.addEventListener('input',go);inp.addEventListener('focus',go);inp.addEventListener('blur',function(){setTimeout(function(){box.hidden=true},180)});
+ box.addEventListener('mousedown',function(e){e.preventDefault()});
+ box.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;inp.value=curSug[+b.getAttribute('data-i')].l;box.hidden=true})}
+attach('#fRes',resSug);attach('#fIntro',introSug);
+
+/* 엑셀 */
+function ymd(){var d=new Date();return String(d.getFullYear()).slice(2)+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)}
+$('#exp').onclick=function(){
+ var rows=people.slice().sort(function(a,b){return a.name.localeCompare(b.name,'ko')});
+ var aoa=[['No.','성명','전화번호','생년월일','거주지','소개자','비고']];
+ rows.forEach(function(p,i){var b=p.birth;if(/^[1-9]\d{5}$/.test(b))b=Number(b);aoa.push([i+1,p.name,p.phone,b,p.res,p.intro,p.memo])});
+ var ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:6},{wch:14},{wch:16},{wch:10},{wch:20},{wch:14},{wch:14}];
+ var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Sheet1');
+ XLSX.writeFile(wb,'법인행사참가자명단_DATA'+ymd()+'.xlsx');
+};
+function pickH(h){h=String(h||'').replace(/\s+/g,'');if(/^(성명|이름)/.test(h))return'name';if(/전화|연락처|휴대/.test(h))return'phone';if(/생년|생일/.test(h))return'birth';if(/거주/.test(h))return'res';if(/소개/.test(h))return'intro';if(/^(비고|메모)/.test(h))return'memo';return''}
+function readBook(buf,name){
+  if(/\.(csv|txt)$/i.test(name||'')){
+    var u8=new Uint8Array(buf),t;
+    try{t=new TextDecoder('utf-8',{fatal:true}).decode(u8)}catch(e){try{t=new TextDecoder('euc-kr').decode(u8)}catch(e2){t=new TextDecoder('utf-8').decode(u8)}}
+    return XLSX.read(t.replace(/^\uFEFF/,''),{type:'string'});
+  }
+  return XLSX.read(new Uint8Array(buf),{type:'array'});
+}
+$('#imp').onclick=function(){$('#file').value='';$('#file').click()};
+$('#file').onchange=function(){
+ var f=this.files&&this.files[0];if(!f)return;var fr=new FileReader();
+ fr.onload=function(){
+  try{
+   var wb=readBook(fr.result,f.name),ws=wb.Sheets[wb.SheetNames[0]];
+   var aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''}),hi=-1,map={};
+   for(var i=0;i<Math.min(aoa.length,20)&&hi<0;i++){var m={},hn=false;aoa[i].forEach(function(c,ci){var k=pickH(c);if(k&&m[k]===undefined)m[k]=ci;if(k==='name')hn=true});if(hn&&m.phone!==undefined){hi=i;map=m}}
+   if(hi<0){alert('“성명”, “전화번호” 제목이 있는 표를 찾지 못했어요.');return}
+   var inc=[];
+   for(var r=hi+1;r<aoa.length;r++){var row=aoa[r],nm=String(row[map.name]==null?'':row[map.name]).trim();if(!nm)continue;
+    var g=function(k){return map[k]===undefined?'':String(row[map[k]]==null?'':row[map[k]]).trim()};var bd=digits(g('birth'));
+    inc.push({name:nm,phone:fmtPhone(g('phone')),birth:bd.length===5?'0'+bd:bd,res:g('res'),intro:g('intro'),memo:g('memo')})}
+   if(!inc.length){alert('사람 정보가 들어있는 행이 없어요.');return}
+   var mode=prompt('엑셀에서 '+inc.length+'명을 찾았어요.\n\n1 = 합치기 (같은 이름·번호는 갱신, 없으면 추가)\n2 = 통째로 교체 (엑셀에 없는 사람은 삭제!)\n\n번호를 입력하세요 (취소=아무것도 안 함)','1');
+   if(mode!=='1'&&mode!=='2')return;
+   doImport(inc,mode==='2');
+  }catch(e){alert('지원하지 않는 파일이에요.')}
+ };fr.readAsArrayBuffer(f);
+};
+function doImport(inc,replace){
+ var idx={};people.forEach(function(p){var k=p.name+'|'+digits(p.phone);(idx[k]=idx[k]||[]).push(p)});
+ var used={},ops=[],add=0,upd=0,now=Date.now();
+ inc.forEach(function(it){var k=it.name+'|'+digits(it.phone),c=(idx[k]||[]).filter(function(p){return !used[p.id]})[0];
+  if(c){used[c.id]=1;var ch=false,n=Object.assign({},c);['phone','birth','res','intro','memo'].forEach(function(f){if((replace||it[f])&&it[f]!==c[f]){n[f]=it[f];ch=true}});if(ch){n.ts=now;ops.push({t:'set',p:n});upd++}}
+  else{var id=BKFB.newId();used[id]=1;ops.push({t:'set',p:{id:id,name:it.name,phone:it.phone,birth:it.birth,res:it.res,intro:it.intro,memo:it.memo,ts:now}});add++}});
+ var rem=0;if(replace)people.forEach(function(p){if(!used[p.id]){ops.push({t:'del',id:p.id});rem++}});
+ if(replace&&rem>0&&!confirm('엑셀에 없는 '+rem+'명이 삭제돼요. 앱에서도 삭제됩니다. 계속할까요?'))return;
+ if(!ops.length){toast('바뀐 내용이 없어요');return}
+ toast('올리는 중…');
+ BKFB.batch(ops).then(function(){toast('추가 '+add+'명 · 갱신 '+upd+'명'+(replace?' · 삭제 '+rem+'명':''))}).catch(function(e){toast(fbErr(e))});
+}
+})();
+</script>
+</body>
+</html>
