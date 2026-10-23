@@ -78,6 +78,16 @@ tr.sel td{background:#EAF3FE}
 .pc-f button{padding:6px 14px;border-radius:9px;background:var(--b50);color:var(--b800);font-weight:700;font-size:13px}.pc-f button.d{background:var(--red-bg);color:var(--red)}
 .pc-memo{margin-top:8px;color:var(--sub);font-size:12.5px}
 .sentinel{height:1px}
+.pm{max-width:820px}
+.pm textarea{width:100%;border:1.5px solid var(--b700,#1A56DB);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.55;font-family:inherit;min-height:104px;resize:vertical}
+.pssum{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:12px 0 6px;font-size:13px;font-weight:800}
+.chp{padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;white-space:nowrap}.chp.ok{background:#E3F6EA;color:#17803D}.chp.du{background:#FDECEC;color:#C62828}.chp.wn{background:#FFF2E3;color:#B35A00}
+.pt{width:100%;border-collapse:collapse;font-size:13px}.pt th{background:#F4F6FA;text-align:left;padding:6px 6px;font-size:12px;color:var(--sub)}.pt td{padding:4px 5px;border-top:1px solid var(--line);vertical-align:middle}
+.pt input[type=text]{width:100%;border:1px solid transparent;border-radius:7px;padding:5px 6px;font-size:13px;background:transparent;font-family:inherit}.pt input[type=text]:hover,.pt input[type=text]:focus{border-color:var(--line);background:#fff}
+.pt tr.du td{background:#FFF6F6}.pt tr.wn td{background:#FFF8EE}.pt tr.er td{background:#FFF6F6;color:#C62828}
+.pt select{border:1.5px solid #E8710A;border-radius:8px;padding:4px 6px;font-size:12.5px;font-weight:700;color:#B35A00;background:#fff}
+.pwrap{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:6px}
+.pleg{font-size:12px;color:var(--sub);margin-top:8px}
 .btn.org{background:#FFF2E3;color:#B35A00}.btn.ghost{background:#fff;border:1px solid var(--line)}
 .dbanner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 14px;background:#FFF2E3;border-bottom:1px solid #F7D3A8;color:#9A5200;font-weight:700;font-size:14px}
 .dbanner .btn{height:32px;font-size:12.5px}
@@ -135,6 +145,7 @@ tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
       <div class="bar">
         <input class="q" id="q" type="search" placeholder="이름 · 전화번호 · 거주지 · 소개자 검색">
         <button class="btn org" id="dupBtn" hidden>⚠ 중복 0건 · 중복만 보기</button>
+        <button class="btn" id="pasteBtn">📋 붙여넣기 추가</button>
         <button class="btn pri" id="add">+ 새로 추가</button>
         <button class="btn" id="imp">엑셀 올리기</button>
         <button class="btn" id="exp">엑셀 내려받기</button>
@@ -176,6 +187,18 @@ tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
     <div class="mf"><button class="btn dng" id="mDel" hidden>삭제</button><div class="sp"></div><button class="btn" id="mCancel">취소</button><button class="btn pri" id="mSave">저장</button></div>
   </div>
 </div>
+<div class="modal-b" id="pb" hidden>
+  <div class="modal pm" style="max-width:820px">
+    <h3>붙여넣기로 한 번에 추가</h3>
+    <p class="hint">카톡·문자 내용을 그대로 붙여넣으세요. 한 줄에 한 명. 예) 이영구 · 010-8079-7975 · 680210 / 장안동, 김왕길<br>한쪽만 적힌 값은 법정동이면 거주지, 사람 이름이면 소개자로 자동 판단해요.</p>
+    <textarea id="pText" placeholder="여기에 붙여넣기" autocomplete="off"></textarea>
+    <label class="f" style="margin-top:8px;max-width:260px">공통 비고 (선택)<input id="pMemo" maxlength="40" placeholder="예) BK" autocomplete="off"></label>
+    <div class="pssum" id="pSum"></div>
+    <div class="pwrap" id="pWrap" hidden><table class="pt"><thead><tr><th></th><th>이름</th><th>전화번호</th><th>생년월일</th><th>거주지</th><th>소개자</th><th>비고/판단</th></tr></thead><tbody id="pBody"></tbody></table></div>
+    <p class="pleg">칸을 눌러 바로 고칠 수 있어요 · 🟠 확인 필요 줄은 선택하기 전에는 추가되지 않아요</p>
+    <div class="mf"><button class="btn" id="pCancel">취소</button><button class="btn pri" id="pGo" disabled>추가</button></div>
+  </div>
+</div>
 <div class="modal-b" id="mgb" hidden>
   <div class="modal">
     <h3 id="mgT">합치기</h3>
@@ -189,6 +212,7 @@ tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
 
 <script src="firebase-config.js"></script>
 <script src="bjd.js"></script>
+<script src="paste.js"></script>
 <script src="xlsx.full.min.js"></script>
 <script src="fb.js"></script>
 <script>
@@ -370,6 +394,47 @@ $('#dupAuto').onclick=function(){
  gs.forEach(function(g){var base=pickBase(g.items),r=autoValues(g.items,base);conf+=r.conflicts;rm+=mergeOps(g.items,base,r.vals,ops)});
  if(!confirm('중복 '+gs.length+'건을 자동으로 합칠까요?\n빈 칸은 사본 값으로 채우고, 비고가 다르면 둘 다 남겨요.'+(conf?'\n값이 서로 다른 항목이 '+conf+'개 있어요. 그 항목은 정보가 더 많은 쪽 값을 써요.\n(하나씩 고르려면 취소 후 각 행의 “합치기”를 누르세요)':'')+'\n앱(모든 폰)에도 바로 반영되고 되돌릴 수 없어요.'))return;
  BKFB.batch(ops).then(function(){toast(gs.length+'건을 합쳤어요 ('+rm+'개 삭제)')}).catch(function(e){toast(fbErr(e))})};
+
+/* 붙여넣기 추가 */
+var pRows=[],pChk={};
+function pExist(){var m={};people.forEach(function(p){m[String(p.name).trim()+'|'+digits(p.phone)]=1});return m}
+function pParse(reset){
+ pRows=BKPaste.parse($('#pText').value);var ex=pExist(),seen={};
+ pRows.forEach(function(r){r.dup=false;if(r.err)return;
+  var k=String(r.name).trim()+'|'+digits(r.phone);
+  if(ex[k])r.dup='이미 등록됨';else if(seen[k])r.dup='붙여넣은 내용에 중복';seen[k]=1;
+  if(reset||pChk['k'+r.idx]===undefined)pChk['k'+r.idx]=!r.dup&&!BKPaste.needsCheck(r)});
+}
+function pRender(){
+ var ok=0,du=0,wn=0,er=0,sel=0,h='';
+ pRows.forEach(function(r){var key='k'+r.idx;
+  if(r.err){er++;h+='<tr class="er"><td></td><td colspan="5">'+esc(r.raw)+'</td><td>'+esc(r.err)+'</td></tr>';return}
+  var needs=BKPaste.needsCheck(r),un=BKPaste.unresolved(r),on=!!pChk[key]&&!un;
+  if(r.dup)du++;else if(needs)wn++;else ok++;if(on)sel++;
+  var extra='';
+  if(r.dup)extra+='<span class="chp du">'+esc(r.dup)+'</span> ';
+  r.pend.forEach(function(p,pi){extra+='<div>“'+esc(p.text)+'” <select data-r="'+r.idx+'" data-p="'+pi+'"><option value=""'+(p.pick?'':' selected')+'>선택…</option><option value="res"'+(p.pick==='res'?' selected':'')+'>거주지</option><option value="intro"'+(p.pick==='intro'?' selected':'')+'>소개자</option><option value="memo"'+(p.pick==='memo'?' selected':'')+'>비고</option><option value="skip"'+(p.pick==='skip'?' selected':'')+'>넣지 않음</option></select> <small style="color:var(--sub)">'+esc(p.why)+'</small></div>'});
+  if(!extra&&(r.notes.res||r.notes.intro))extra='<span class="chp ok">'+esc(r.notes.res&&r.notes.intro?'법정동 ✓ · 이름 ✓':(r.notes.res||r.notes.intro))+'</span>';
+  h+='<tr class="'+(r.dup?'du':needs?'wn':'')+'"><td><input type="checkbox" class="c pcb" data-r="'+r.idx+'"'+(on?' checked':'')+(un?' disabled':'')+'></td>'+
+   '<td><input type="text" data-r="'+r.idx+'" data-f="name" value="'+esc(r.name)+'"></td><td><input type="text" data-r="'+r.idx+'" data-f="phone" value="'+esc(r.phone)+'"></td>'+
+   '<td><input type="text" data-r="'+r.idx+'" data-f="birth" value="'+esc(r.birth)+'" maxlength="6"></td><td><input type="text" data-r="'+r.idx+'" data-f="res" value="'+esc(r.res)+'"></td><td><input type="text" data-r="'+r.idx+'" data-f="intro" value="'+esc(r.intro)+'"></td><td>'+extra+'</td></tr>'});
+ $('#pBody').innerHTML=h;$('#pWrap').hidden=!pRows.length;
+ $('#pSum').innerHTML=pRows.length?'<span>인식 '+pRows.length+'명</span>'+(ok?'<span class="chp ok">자동 판단 '+ok+'</span>':'')+(wn?'<span class="chp wn">확인 필요 '+wn+'</span>':'')+(du?'<span class="chp du">중복 '+du+'</span>':'')+(er?'<span class="chp du">읽지 못함 '+er+'</span>':''):'';
+ var g=$('#pGo');g.disabled=!sel;g.textContent=sel?sel+'명 추가':'추가';
+}
+$('#pasteBtn').onclick=function(){$('#pText').value='';$('#pMemo').value='';pRows=[];pChk={};pRender();$('#pb').hidden=false;setTimeout(function(){$('#pText').focus()},50)};
+$('#pCancel').onclick=function(){$('#pb').hidden=true};
+$('#pText').oninput=function(){pChk={};pParse(true);pRender()};
+$('#pBody').onchange=function(e){var t=e.target;var ri=+t.getAttribute('data-r');var r=pRows.filter(function(x){return x.idx===ri})[0];if(!r)return;
+ if(t.classList.contains('pcb')){pChk['k'+ri]=t.checked;pRender();return}
+ if(t.tagName==='SELECT'){r.pend[+t.getAttribute('data-p')].pick=t.value;if(!BKPaste.unresolved(r)&&!r.dup)pChk['k'+ri]=true;pRender();return}
+ var f=t.getAttribute('data-f');if(f){var v=t.value.trim();if(f==='phone')v=fmtPhone(v);if(f==='birth')v=digits(v).slice(0,6);r[f]=v;
+  var ex=pExist(),k=String(r.name).trim()+'|'+digits(r.phone);r.dup=ex[k]?'이미 등록됨':false;if(r.dup)pChk['k'+ri]=false;pRender()}};
+$('#pGo').onclick=function(){var memo=$('#pMemo').value.trim(),ops=[],n=0;
+ pRows.forEach(function(r){if(!pChk['k'+r.idx]||r.err||BKPaste.unresolved(r))return;var d=BKPaste.finalize(r,memo);
+  if(!d.name||digits(d.phone).length<9)return;d.id=BKFB.newId();d.ts=Date.now();ops.push({t:'set',p:d});n++});
+ if(!n)return;$('#pb').hidden=true;
+ BKFB.batch(ops).then(function(){toast(n+'명을 추가했어요')}).catch(function(e){toast(fbErr(e))})};
 
 /* 추가/수정/삭제 */
 function find(id){return people.filter(function(p){return p.id===id})[0]||null}
