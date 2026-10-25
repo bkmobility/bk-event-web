@@ -153,10 +153,17 @@ tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
  #pasteBtn,#imp,#exp{display:none}
  .sv{padding:12px}.sk4{grid-template-columns:repeat(3,1fr);gap:8px}.sk4 .dupk{display:none}.sk4 b{font-size:22px}.sg{grid-template-columns:1fr}
 }
+.topw{position:sticky;top:0;z-index:40;padding:10px 12px 0;background:var(--bg,#F4F6FA);max-width:1180px;margin:0 auto}
+.topw .top{border-radius:26px;background:linear-gradient(135deg,#1565C0,#1976D2 55%,#1E88E5);box-shadow:0 8px 20px rgba(21,101,192,.25);padding:12px 20px}
+.top .tk{flex:0 0 100%;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.top .tk div{background:rgba(255,255,255,.18);border-radius:14px;padding:7px 6px 9px;text-align:center}
+.top .tk span{display:block;font-size:12.5px;opacity:.92}.top .tk b{display:block;font-size:26px;line-height:1.15;margin-top:2px}
+.top .tk .dupk{cursor:pointer}
+@media(max-width:640px){.topw{padding:8px 10px 0}.topw .top{border-radius:22px;padding:8px 12px;min-height:60px;flex-wrap:wrap;row-gap:6px}.top h1{flex:1}.top .tk{grid-template-columns:repeat(3,1fr);gap:8px}.top .tk .dupk{display:none}.top .tk b{font-size:22px}}
 </style>
 </head>
 <body>
-<div class="top">
+<div class="topw"><div class="top">
   <div class="logo">BK</div>
   <div><h1>법인행사 현황 관리</h1><small>BK Mobility</small></div>
   <div class="wtabs" id="wtabs" hidden><button data-v="list" class="on">목록</button><button data-v="stats">통계</button></div>
@@ -164,7 +171,8 @@ tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
   <span class="stat" id="stat" hidden></span>
   <span class="who" id="who"></span>
   <button class="btn red" id="logout" hidden>로그아웃</button>
-</div>
+  <div class="tk" id="tk" hidden></div>
+</div></div>
 
 <div class="wrap">
   <div class="card setup" id="setup" hidden>
@@ -293,7 +301,7 @@ else{
  BKFB.init(cfg);
  show('#login');
  BKFB.onAuth(function(u){
-  if(!u){BKFB.stopListen();ready=false;people=[];sel={};show('#login');$('#wtabs').hidden=true;$('#bnav').hidden=true;$('#logout').hidden=true;$('#who').textContent='';setStat('');return}
+  if(!u){BKFB.stopListen();ready=false;people=[];sel={};show('#login');$('#wtabs').hidden=true;$('#bnav').hidden=true;$('#tk').hidden=true;$('#logout').hidden=true;$('#who').textContent='';setStat('');return}
   $('#who').textContent=u.email;$('#logout').hidden=false;show('#app');setStat('연결 중…');$('#wtabs').hidden=false;$('#bnav').hidden=false;setView(view);
   BKFB.listen(function(list,meta){
    people=list;ready=true;render(false);
@@ -492,7 +500,7 @@ $('#pGo').onclick=function(){var memo=$('#pMemo').value.trim(),ops=[],n=0;
 
 /* 목록 / 통계 / 메뉴 */
 function setView(v){view=v;
- $('#vList').hidden=v!=='list';$('#vStats').hidden=v!=='stats';$('#vMenu').hidden=v!=='menu';
+ $('#vList').hidden=v!=='list';$('#vStats').hidden=v!=='stats';$('#vMenu').hidden=v!=='menu';$('#tk').hidden=v!=='stats';
  document.querySelectorAll('#wtabs button,#bnav button').forEach(function(b){var on=b.getAttribute('data-v')===v||(v==='menu'&&b.getAttribute('data-v')==='menu');b.classList.toggle('on',on)});
  window.scrollTo(0,0)}
 document.addEventListener('click',function(e){var b=e.target.closest('#wtabs button,#bnav button');if(b){var v=b.getAttribute('data-v');if(v==='menu'&&!narrow.matches)v='list';setView(v);return}
@@ -513,13 +521,14 @@ function renderStats(){
  var intro=countBy('intro'),res=countBy('res'),K=BKStats,ms=K.missing(people),reg=K.regions(people);
  if(ms.res)reg.push({k:'미입력',n:ms.res,sk:'miss',sv:'res',gray:true});
  var dupN=dupGroupsCache.length;
+ var tk=$('#tk');if(tk)tk.innerHTML='<div><span>총 인원</span><b>'+people.length+'</b></div><div><span>소개자</span><b>'+intro.length+'</b></div><div><span>거주지</span><b>'+res.length+'</b></div><div class="dupk" data-dup="1"><span>중복 건</span><b>'+dupN+'</b></div>';
  var o=function(kind,def){return statMore[kind]?{all:true}:{limit:def}};
  var inp='';[['res','거주지 없음'],['intro','소개자 없음'],['memo','비고 없음'],['birth','생년월일 없음']].forEach(function(r){inp+='<button class="sr warn" data-sk="miss" data-sv="'+r[0]+'"><span class="n">'+r[1]+'</span><span class="c">'+ms[r[0]]+'명 ›</span></button>'});
  inp+='<button class="sr warn" data-dup="1"><span class="n">중복 (이름·번호 같음)</span><span class="c">'+dupN+'건 ›</span></button>';
  var recent=people.filter(function(p){return p.ts>0}).sort(function(a,b){return b.ts-a.ts}).slice(0,5);
  var rec=recent.map(function(p){return'<button class="sr" data-rid="'+esc(p.id)+'"><span class="n" style="flex:1"><b>'+esc(p.name)+'</b> <small style="color:var(--sub)">'+esc(p.phone)+(p.res?' · '+esc(p.res):'')+'</small></span></button>'}).join('');
  vs.innerHTML='<div class="shint"><b>항목을 누르면</b> 목록 탭으로 이동해서 그 사람들만 보여줘요</div>'+
-  '<div class="sk4"><div><b>'+people.length+'</b><span>총 인원</span></div><div><b>'+intro.length+'</b><span>소개자</span></div><div><b>'+res.length+'</b><span>거주지</span></div><div class="w dupk cl" data-dup="1"><b>'+dupN+'</b><span>중복 건</span></div></div>'+
+  ''+
   '<div class="sg">'+
   '<div class="sc"><h4>소개자별 인원 <small>상위 8</small></h4>'+sbars(intro,'intro',o('intro',8))+'</div>'+
   '<div class="sc"><h4>거주지별 인원 <small>동네 단위</small></h4>'+sbars(res,'res',o('res',8))+'</div>'+
