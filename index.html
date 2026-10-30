@@ -160,6 +160,10 @@ tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
 .top .tk span{display:block;font-size:12.5px;opacity:.92}.top .tk b{display:block;font-size:26px;line-height:1.15;margin-top:2px}
 .top .tk .dupk{cursor:pointer}
 @media(max-width:640px){.topw{padding:8px 10px 0}.topw .top{border-radius:22px;padding:8px 12px;min-height:60px;flex-wrap:wrap;row-gap:6px}.top h1{flex:1}.top .tk{grid-template-columns:repeat(3,1fr);gap:8px}.top .tk .dupk{display:none}.top .tk b{font-size:22px}}
+.sr.rc{gap:12px;padding:9px 0;border-top:1px solid var(--line);border-radius:0;white-space:nowrap;align-items:baseline;font-size:16px}.sr.rc:first-of-type{border-top:0}
+.rc .rn{font-size:17px;font-weight:800;flex:0 0 auto;min-width:64px}.rc .rb{font-size:15px;font-weight:600;color:var(--mut);flex:0 0 auto}.rc .rp{font-size:15.5px;font-weight:600;flex:0 0 auto;font-variant-numeric:tabular-nums}.rc .rr{font-size:15px;font-weight:600;color:var(--sub);min-width:0;flex:1 1 0;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:640px){.sr.rc{gap:8px}.rc .rn{font-size:15px;min-width:3.4em}.rc .rb{font-size:12.5px}.rc .rp,.rc .rr{font-size:13.5px}}
+@media(max-width:370px){.sr.rc{gap:6px}.rc .rn{font-size:14.5px;min-width:0}.rc .rb{font-size:12px}.rc .rp,.rc .rr{font-size:12.5px}}
 </style>
 </head>
 <body>
@@ -526,7 +530,8 @@ function renderStats(){
  var inp='';[['res','거주지 없음'],['intro','소개자 없음'],['memo','비고 없음'],['birth','생년월일 없음']].forEach(function(r){inp+='<button class="sr warn" data-sk="miss" data-sv="'+r[0]+'"><span class="n">'+r[1]+'</span><span class="c">'+ms[r[0]]+'명 ›</span></button>'});
  inp+='<button class="sr warn" data-dup="1"><span class="n">중복 (이름·번호 같음)</span><span class="c">'+dupN+'건 ›</span></button>';
  var recent=people.filter(function(p){return p.ts>0}).sort(function(a,b){return b.ts-a.ts}).slice(0,5);
- var rec=recent.map(function(p){return'<button class="sr" data-rid="'+esc(p.id)+'"><span class="n" style="flex:1"><b>'+esc(p.name)+'</b> <small style="color:var(--sub)">'+esc(p.phone)+(p.res?' · '+esc(p.res):'')+'</small></span></button>'}).join('');
+ function manAge(b){if(!/^\d{6}$/.test(b||''))return'';var yy=+b.slice(0,2),mm=+b.slice(2,4),dd=+b.slice(4,6);if(mm<1||mm>12||dd<1||dd>31)return'';var n=new Date(),cy=n.getFullYear()%100,y=yy<=cy-16?2000+yy:1900+yy,a=n.getFullYear()-y;if(n.getMonth()+1<mm||(n.getMonth()+1===mm&&n.getDate()<dd))a--;return a>=0&&a<120?'만 '+a+'세':''}
+ var rec=recent.map(function(p){var ag=manAge(p.birth),bd=p.birth?esc(p.birth)+(ag?' · '+ag:''):'';return'<button class="sr rc" data-rid="'+esc(p.id)+'"><span class="rn">'+esc(p.name)+'</span><span class="rb">'+bd+'</span><span class="rp">'+esc(p.phone)+'</span><span class="rr">'+esc(p.res||'')+'</span></button>'}).join('');
  vs.innerHTML='<div class="shint"><b>항목을 누르면</b> 목록 탭으로 이동해서 그 사람들만 보여줘요</div>'+
   ''+
   '<div class="sg">'+
