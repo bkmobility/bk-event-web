@@ -44,6 +44,7 @@ th{background:var(--b50);color:var(--sub);font-size:13px;position:sticky;top:0;c
 td.m{white-space:normal;color:var(--sub)}
 tr.r:hover{background:var(--b50)}
 .tw{overflow:auto;max-height:68vh}
+.tw th,.tw td{text-align:center}
 .acts button{padding:5px 10px;border-radius:8px;background:var(--b50);color:var(--b800);font-weight:700;font-size:13px;margin-right:4px}
 .acts button.d{background:var(--red-bg);color:var(--red)}
 .modal-b{position:fixed;inset:0;background:rgba(10,20,40,.5);z-index:50;display:grid;place-items:center;padding:14px}
@@ -223,7 +224,7 @@ tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
       <div class="fxb" id="fxBanner" hidden><span id="fxT"></span><span class="sp"></span><button class="btn ghost" id="fxOff" style="height:32px;font-size:12.5px">필터 해제</button></div>
       <div class="cnt" id="cnt"></div>
       <div class="tw" id="tw"><table>
-        <thead><tr><th style="width:44px"></th><th data-k="name">이름</th><th data-k="phone">전화번호</th><th class="h" data-k="birth">생년월일</th><th data-k="res">거주지</th><th data-k="intro">소개자</th><th class="h" data-k="memo">비고</th><th></th></tr></thead>
+        <thead><tr><th style="width:44px"></th><th data-k="name">이름</th><th data-k="phone">전화번호</th><th class="h" data-k="birth">생년월일</th><th data-k="res">거주지</th><th data-k="intro">소개자</th><th class="h" data-k="joined">가입일</th><th class="h" data-k="memo">비고</th><th></th></tr></thead>
         <tbody id="tb"></tbody>
       </table><div class="sentinel" id="sentT"></div></div>
       <div class="cards" id="cards"></div>
@@ -241,6 +242,7 @@ tr.dup td{background:#FFF8EE}tr.gs td{border-top:3px solid #F7D3A8}
     <label class="f">생년월일 (6자리)<input id="fBirth" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="예) 790101"></label>
     <div class="sugw"><label class="f">거주지 (법정동 검색)<input id="fRes" maxlength="40" autocomplete="off" placeholder="동네 이름을 입력하세요 (예: 역동)"></label><div class="sug" hidden></div></div>
     <div class="sugw"><label class="f">소개자<input id="fIntro" maxlength="30" autocomplete="off"></label><div class="sug" hidden></div></div>
+    <label class="f">가입일 <small style="font-weight:500;color:var(--mut)">(수정 가능 · 비워 둬도 돼요)</small><input id="fJoin" maxlength="10" inputmode="numeric" autocomplete="off" placeholder="예) 2026-10-30"></label>
     <label class="f">비고<input id="fMemo" maxlength="40" autocomplete="off"></label>
     <div class="dupebox" id="mDupe" hidden></div>
     <label class="blkrow"><input type="checkbox" class="c" id="blockDup"> 중복이면 추가 막기 (끄면 “그래도 추가” 가능)</label>
@@ -329,7 +331,9 @@ function lsSet(k,v){try{localStorage.setItem(LSP+k,v)}catch(e){}}
 var fx=null,view='list';
 var blockDup=lsGet('block')==='1',dupIgnore={},dupMode=false,dupSet={},dupGroupsCache=[];
 try{dupIgnore=JSON.parse(lsGet('ign')||'{}')||{}}catch(e){dupIgnore={}}
-var DF=[['birth','생년월일'],['res','거주지'],['intro','소개자'],['memo','비고']];
+var DF=[['birth','생년월일'],['res','거주지'],['intro','소개자'],['joined','가입일'],['memo','비고']];
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function normJoin(s){s=String(s||'').trim();if(!s)return'';var d=s.replace(/\D/g,'');if(d.length!==8)return null;var y=+d.slice(0,4),m=+d.slice(4,6),dd=+d.slice(6,8);if(y<2000||y>2100||m<1||m>12||dd<1||dd>31)return null;return d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)}
 function nameKey(p){return String(p.name||'').trim()+'|'+digits(p.phone)}
 function computeDups(){
  var m={};people.forEach(function(p){if(digits(p.phone).length<8)return;var k=nameKey(p);(m[k]=m[k]||[]).push(p)});
@@ -344,11 +348,11 @@ function filterList(){
  if(dupMode){l=l.filter(function(p){return dupSet[p.id]});l.sort(function(a,b){return a.name.localeCompare(b.name,'ko')||nameKey(a).localeCompare(nameKey(b))});}
  l.forEach(function(p,i){p.__gs=dupMode&&(i===0||nameKey(l[i-1])!==nameKey(p))});
  return l}
-function rowHtml(p){return '<tr class="r'+(sel[p.id]?' sel':'')+(dupSet[p.id]?' dup':'')+(p.__gs?' gs':'')+'" data-id="'+esc(p.id)+'"><td><input type="checkbox" class="c" data-id="'+esc(p.id)+'"'+(sel[p.id]?' checked':'')+' aria-label="선택"></td><td><b>'+esc(p.name)+'</b>'+(dupSet[p.id]?'<span class="dp">중복</span>':'')+'</td><td>'+esc(p.phone)+'</td><td class="h">'+esc(p.birth)+'</td><td>'+esc(p.res)+'</td><td>'+esc(p.intro)+'</td><td class="h m">'+esc(p.memo)+'</td><td class="acts">'+(dupSet[p.id]?'<button class="o" data-a="m">합치기</button>':'')+'<button data-a="e">수정</button><button class="d" data-a="d">삭제</button></td></tr>'}
+function rowHtml(p){return '<tr class="r'+(sel[p.id]?' sel':'')+(dupSet[p.id]?' dup':'')+(p.__gs?' gs':'')+'" data-id="'+esc(p.id)+'"><td><input type="checkbox" class="c" data-id="'+esc(p.id)+'"'+(sel[p.id]?' checked':'')+' aria-label="선택"></td><td><b>'+esc(p.name)+'</b>'+(dupSet[p.id]?'<span class="dp">중복</span>':'')+'</td><td>'+esc(p.phone)+'</td><td class="h">'+esc(p.birth)+'</td><td>'+esc(p.res)+'</td><td>'+esc(p.intro)+'</td><td class="h">'+esc(p.joined||'')+'</td><td class="h m">'+esc(p.memo)+'</td><td class="acts">'+(dupSet[p.id]?'<button class="o" data-a="m">합치기</button>':'')+'<button data-a="e">수정</button><button class="d" data-a="d">삭제</button></td></tr>'}
 function cardHtml(p){var tag=p.memo?'<span class="pill">'+esc(p.memo)+'</span>':'';
  return '<div class="pcard'+(sel[p.id]?' sel':'')+(dupSet[p.id]?' dup':'')+(p.__gs?' gs':'')+'" data-id="'+esc(p.id)+'"><div class="pc-h"><input type="checkbox" class="c" data-id="'+esc(p.id)+'"'+(sel[p.id]?' checked':'')+' aria-label="선택"><b>'+esc(p.name)+'</b>'+tag+(dupSet[p.id]?'<span class="dp">중복</span>':'')+'</div>'+
  '<div class="pc-ph">☎ '+(p.phone?'<a href="tel:'+esc(digits(p.phone))+'">'+esc(p.phone)+'</a>':'-')+'</div>'+
- '<div class="tiles"><div class="tile"><small>생년월일</small><b>'+(esc(p.birth)||'-')+'</b></div><div class="tile"><small>거주지</small><b>'+(esc(p.res)||'-')+'</b></div><div class="tile"><small>소개자</small><b>'+(esc(p.intro)||'-')+'</b></div></div>'+
+ '<div class="tiles"><div class="tile"><small>생년월일</small><b>'+(esc(p.birth)||'-')+'</b></div><div class="tile"><small>거주지</small><b>'+(esc(p.res)||'-')+'</b></div><div class="tile"><small>소개자</small><b>'+(esc(p.intro)||'-')+'</b></div></div>'+(p.joined?'<div class="pc-memo">가입일 '+esc(p.joined)+'</div>':'')+
  '<div class="pc-f">'+(dupSet[p.id]?'<button class="o" data-a="m">합치기</button>':'')+'<button data-a="e">수정</button><button class="d" data-a="d">삭제</button></div></div>'}
 function render(reset){
  computeDups();
@@ -444,7 +448,7 @@ function mgFieldHtml(f,label,items){
  return h+'</div>'}
 function mgValues(){var vals={},items=mgS.g.items;DF.forEach(function(d){var f=d[0],r=document.querySelector('input[name="mg_'+f+'"]:checked'),o=distinct(items,f,true);
  if(!r)vals[f]=o[0]||'';else if(r.value==='__both')vals[f]=distinct(items,f,false).join(', ');else vals[f]=r.value});return vals}
-function mgPrev(){var v=mgValues(),p=mgS.g.items[0];$('#mgP').textContent=[p.name,p.phone,v.birth,v.res,v.intro,v.memo].filter(Boolean).join(' · ')}
+function mgPrev(){var v=mgValues(),p=mgS.g.items[0];$('#mgP').textContent=[p.name,p.phone,v.birth,v.res,v.intro,v.joined,v.memo].filter(Boolean).join(' · ')}
 function openMerge(key){
  var g=dupGroupsCache.filter(function(x){return x.key===key})[0];if(!g)return;
  mgS.g=g;mgS.base=pickBase(g.items);
@@ -498,7 +502,7 @@ $('#pBody').onchange=function(e){var t=e.target;var ri=+t.getAttribute('data-r')
   var ex=pExist(),k=String(r.name).trim()+'|'+digits(r.phone);r.dup=ex[k]?'이미 등록됨':false;if(r.dup)pChk['k'+ri]=false;pRender()}};
 $('#pGo').onclick=function(){var memo=$('#pMemo').value.trim(),ops=[],n=0;
  pRows.forEach(function(r){if(!pChk['k'+r.idx]||r.err||BKPaste.unresolved(r))return;var d=BKPaste.finalize(r,memo);
-  if(!d.name||digits(d.phone).length<9)return;d.id=BKFB.newId();d.ts=Date.now();ops.push({t:'set',p:d});n++});
+  if(!d.name||digits(d.phone).length<9)return;d.id=BKFB.newId();d.ts=Date.now();d.joined=todayStr();ops.push({t:'set',p:d});n++});
  if(!n)return;$('#pb').hidden=true;
  BKFB.batch(ops).then(function(){toast(n+'명을 추가했어요')}).catch(function(e){toast(fbErr(e))})};
 
@@ -555,7 +559,7 @@ function find(id){return people.filter(function(p){return p.id===id})[0]||null}
 function openModal(id){
  editId=id||null;var p=id?find(id):null;
  $('#mt').textContent=p?'정보 수정':'새로 추가';
- $('#fName').value=p?p.name:'';$('#fPhone').value=p?p.phone:'';$('#fBirth').value=p?p.birth:'';$('#fRes').value=p?p.res:'';$('#fIntro').value=p?p.intro:'';$('#fMemo').value=p?p.memo:'';
+ $('#fName').value=p?p.name:'';$('#fPhone').value=p?p.phone:'';$('#fBirth').value=p?p.birth:'';$('#fRes').value=p?p.res:'';$('#fIntro').value=p?p.intro:'';$('#fMemo').value=p?p.memo:'';$('#fJoin').value=p?(p.joined||''):todayStr();
  $('#mDel').hidden=!p;$('#mErr').hidden=true;$('#mb').hidden=false;$('#blockDup').checked=blockDup;forceAdd=false;checkMDupe();
  setTimeout(function(){$('#fName').focus()},50);
 }
@@ -588,7 +592,8 @@ $('#mSave').onclick=function(){
  if(mExact().length&&!forceAdd){checkMDupe();return bad(blockDup?'이미 등록된 사람이라 추가할 수 없어요.':'이미 등록된 사람이에요. 그래도 저장하려면 “그래도 저장/추가”를 눌러 주세요.')}
  forceAdd=false;
  var p=editId?find(editId):null;
- var rec={id:p?p.id:BKFB.newId(),name:n,phone:ph,birth:b,res:$('#fRes').value.trim(),intro:$('#fIntro').value.trim(),memo:$('#fMemo').value.trim(),ts:Date.now()};
+ var jn=normJoin($('#fJoin').value);if(jn===null){$('#mErr').textContent='가입일은 2026-10-30 형식으로 입력해 주세요. (비워 둬도 돼요)';$('#mErr').hidden=false;return}
+ var rec={id:p?p.id:BKFB.newId(),name:n,phone:ph,birth:b,res:$('#fRes').value.trim(),intro:$('#fIntro').value.trim(),joined:jn,memo:$('#fMemo').value.trim(),ts:Date.now()};
  BKFB.setPerson(rec).then(function(){toast(p?'수정했어요':'추가했어요')}).catch(function(e){toast(fbErr(e))});
  closeModal();
 };
@@ -621,12 +626,12 @@ function ymd(){var d=new Date();return String(d.getFullYear()).slice(2)+('0'+(d.
 $('#exp').onclick=function(){
  var rows=people.slice().sort(function(a,b){return a.name.localeCompare(b.name,'ko')});
  var aoa=[['No.','성명','전화번호','생년월일','거주지','소개자','비고']];
- rows.forEach(function(p,i){var b=p.birth;if(/^[1-9]\d{5}$/.test(b))b=Number(b);aoa.push([i+1,p.name,p.phone,b,p.res,p.intro,p.memo])});
+ rows.forEach(function(p,i){var b=p.birth;if(/^[1-9]\d{5}$/.test(b))b=Number(b);aoa.push([i+1,p.name,p.phone,b,p.res,p.intro,p.joined||'',p.memo])});
  var ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:6},{wch:14},{wch:16},{wch:10},{wch:20},{wch:14},{wch:14}];
  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Sheet1');
  XLSX.writeFile(wb,'법인행사참가자명단_DATA'+ymd()+'.xlsx');
 };
-function pickH(h){h=String(h||'').replace(/\s+/g,'');if(/^(성명|이름)/.test(h))return'name';if(/전화|연락처|휴대/.test(h))return'phone';if(/생년|생일/.test(h))return'birth';if(/거주/.test(h))return'res';if(/소개/.test(h))return'intro';if(/^(비고|메모)/.test(h))return'memo';return''}
+function pickH(h){h=String(h||'').replace(/\s+/g,'');if(/^(성명|이름)/.test(h))return'name';if(/전화|연락처|휴대/.test(h))return'phone';if(/생년|생일/.test(h))return'birth';if(/거주/.test(h))return'res';if(/소개/.test(h))return'intro';if(/가입/.test(h))return'joined';if(/^(비고|메모)/.test(h))return'memo';return''}
 function readBook(buf,name){
   if(/\.(csv|txt)$/i.test(name||'')){
     var u8=new Uint8Array(buf),t;
@@ -647,7 +652,7 @@ $('#file').onchange=function(){
    var inc=[];
    for(var r=hi+1;r<aoa.length;r++){var row=aoa[r],nm=String(row[map.name]==null?'':row[map.name]).trim();if(!nm)continue;
     var g=function(k){return map[k]===undefined?'':String(row[map[k]]==null?'':row[map[k]]).trim()};var bd=digits(g('birth'));
-    inc.push({name:nm,phone:fmtPhone(g('phone')),birth:bd.length===5?'0'+bd:bd,res:g('res'),intro:g('intro'),memo:g('memo')})}
+    inc.push({name:nm,phone:fmtPhone(g('phone')),birth:bd.length===5?'0'+bd:bd,res:g('res'),intro:g('intro'),joined:normJoin(g('joined'))||'',memo:g('memo')})}
    if(!inc.length){alert('사람 정보가 들어있는 행이 없어요.');return}
    var mode=prompt('엑셀에서 '+inc.length+'명을 찾았어요.\n\n1 = 합치기 (같은 이름·번호는 갱신, 없으면 추가)\n2 = 통째로 교체 (엑셀에 없는 사람은 삭제!)\n\n번호를 입력하세요 (취소=아무것도 안 함)','1');
    if(mode!=='1'&&mode!=='2')return;
@@ -659,8 +664,8 @@ function doImport(inc,replace){
  var idx={};people.forEach(function(p){var k=p.name+'|'+digits(p.phone);(idx[k]=idx[k]||[]).push(p)});
  var used={},ops=[],add=0,upd=0,now=Date.now();
  inc.forEach(function(it){var k=it.name+'|'+digits(it.phone),c=(idx[k]||[]).filter(function(p){return !used[p.id]})[0];
-  if(c){used[c.id]=1;var ch=false,n=Object.assign({},c);['phone','birth','res','intro','memo'].forEach(function(f){if((replace||it[f])&&it[f]!==c[f]){n[f]=it[f];ch=true}});if(ch){n.ts=now;ops.push({t:'set',p:n});upd++}}
-  else{var id=BKFB.newId();used[id]=1;ops.push({t:'set',p:{id:id,name:it.name,phone:it.phone,birth:it.birth,res:it.res,intro:it.intro,memo:it.memo,ts:now}});add++}});
+  if(c){used[c.id]=1;var ch=false,n=Object.assign({},c);['phone','birth','res','intro','joined','memo'].forEach(function(f){if((replace||it[f])&&it[f]!==c[f]){n[f]=it[f];ch=true}});if(ch){n.ts=now;ops.push({t:'set',p:n});upd++}}
+  else{var id=BKFB.newId();used[id]=1;ops.push({t:'set',p:{id:id,name:it.name,phone:it.phone,birth:it.birth,res:it.res,intro:it.intro,joined:it.joined||'',memo:it.memo,ts:now}});add++}});
  var rem=0;if(replace)people.forEach(function(p){if(!used[p.id]){ops.push({t:'del',id:p.id});rem++}});
  if(replace&&rem>0&&!confirm('엑셀에 없는 '+rem+'명이 삭제돼요. 앱에서도 삭제됩니다. 계속할까요?'))return;
  if(!ops.length){toast('바뀐 내용이 없어요');return}
